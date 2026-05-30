@@ -67,11 +67,10 @@ jobs:
       - name: Health check
         run: |
           for i in $(seq 1 30); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' "https://${{ secrets.SUBDOMAIN }}/web/database/selector" || true)
-            if [ "$code" = "200" ] || [ "$code" = "303" ] || [ "$code" = "302" ]; then
-              echo "Healthy (HTTP $code)"
-              exit 0
-            fi
+            code=$(curl -s -o /dev/null --max-time 10 -w '%{http_code}' "https://${{ secrets.SUBDOMAIN }}/web/login" || true)
+            case "$code" in
+              200|301|302|303|307|308) echo "Healthy (HTTP $code)"; exit 0 ;;
+            esac
             echo "Attempt $i: HTTP $code, retrying in 5s..."
             sleep 5
           done
