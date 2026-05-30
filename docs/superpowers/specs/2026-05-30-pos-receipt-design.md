@@ -14,7 +14,7 @@ Replace the default Point of Sale receipt with a SFYA-branded layout matching th
 - Visual reskin of the POS receipt template only.
 - Field additions: customer name, invoice number (relabel of `pos.order.name`), cashier name (employee fallback to user), date split into Date / Time, total quantity, balance due, change due.
 - Width: default Odoo POS receipt width (≈ 80mm thermal).
-- Typography: monospace, separator lines (dashed or `===` style), centered headers.
+- Typography: monospace, dashed CSS separator lines (no ASCII `===` art), centered headers.
 - Remove "Powered by Odoo" footer.
 
 **Out of scope:**
@@ -80,7 +80,7 @@ No Python models, no data files, no security rules, no migrations.
 Single `<t t-inherit="point_of_sale.OrderReceipt" t-inherit-mode="extension">` block. Xpath surgeries (replace mode unless noted):
 
 1. **Header** — company name (bold, centered) + street address (centered) + phone (centered, `t-if="order.company.phone"`).
-2. **Title bar** — `===…===` separator line + `SALES INVOICE` centered.
+2. **Title bar** — `.sfya-separator` div + `SALES INVOICE` centered.
 3. **Info block** (inserted under title) — 2-column grid:
    - left: `Customer: <partner_id.name>` (`t-if="order.partner_id"`), `Invoice # : <order.name>`, `Sales By : <cashier_name>`
    - right: `Date : <DD/MM/YYYY>`, `Time : <HH:MM AM/PM>`
@@ -151,7 +151,7 @@ Template-only module; rendering glitches only. No try/except — OWL renders mis
 | Employee mode off | `cashier_name` falls back to `user_id.name`; both null → blank |
 | Company phone blank | Phone line hidden via `t-if` |
 | Long product name | CSS wraps inside Product Name column; Qty/Rate/Total stay right-aligned |
-| Refund (negative qty/totals) | Odoo provides signed values; totals math handles natively |
+| Refund (negative qty/totals) | Odoo provides signed values; line totals + `amount_total` render with leading minus; label stays "Total Balance Due" |
 | Multi-currency / tax-inclusive | Use `order.amount_total` (Odoo computes per company setting) |
 | Overpayment (change due) | `balance_due < 0` → render `Change Due: <abs>` instead of `Total Balance Due` |
 | Odoo minor upgrade renames xpath target | Module fails to load with a visible error in Apps; default receipt still works. Fix is re-targeting xpath. |
