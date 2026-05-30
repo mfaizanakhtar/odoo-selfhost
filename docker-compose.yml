@@ -1,0 +1,74 @@
+services:
+  odoo:
+    image: odoo:18.0
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./config:/etc/odoo:ro
+      - ./addons:/mnt/extra-addons:ro
+    environment:
+      - HOST=db
+      - USER=${ODOO_DB_USER}
+      - PASSWORD=${ODOO_DB_PASSWORD}
+    restart: unless-stopped
+    networks: [internal]
+
+  db:
+    image: postgres:16
+    shm_size: 256mb
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=4GB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "wal_compression=on"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=${ODOO_DB_USER}
+      - POSTGRES_PASSWORD=${ODOO_DB_PASSWORD}
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ODOO_DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2.8
+    depends_on: [odoo]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      - SUBDOMAIN=${SUBDOMAIN}
+    restart: unless-stopped
+    networks: [internal]
+
+volumes:
+  odoo-web-data:
+  odoo-db-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  internal:
+    driver: bridge

@@ -1,0 +1,40 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose
+        run: |
+          # Inject fake env vars so compose parses
+          cat > .env <<EOF
+          ODOO_DB_USER=ci
+          ODOO_DB_PASSWORD=ci
+          ODOO_MASTER_PASSWORD=ci
+          SUBDOMAIN=ci.example.com
+          EOF
+          docker compose -f docker-compose.yml config -q
+
+      - name: Python syntax check
+        run: |
+          python3 -m compileall -q scripts/
+
+      - name: Shell script lint
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y shellcheck
+          shellcheck --severity=warning scripts/*.sh
+
+      - name: XML well-formedness (addons)
+        run: |
+          if compgen -G "addons/**/*.xml" > /dev/null; then
+            for f in $(find addons -name '*.xml'); do
+              python3 -c "import xml.etree.ElementTree as ET; ET.parse('$f')" || exit 1
+            done
+          fi

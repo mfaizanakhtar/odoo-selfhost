@@ -1,0 +1,78 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Build payload
+        env:
+          ODOO_DB_USER: ${{ secrets.ODOO_DB_USER }}
+          ODOO_DB_PASSWORD: ${{ secrets.ODOO_DB_PASSWORD }}
+          ODOO_MASTER_PASSWORD: ${{ secrets.ODOO_MASTER_PASSWORD }}
+          SUBDOMAIN: ${{ secrets.SUBDOMAIN }}
+        run: |
+          mkdir -p .build/payload/config .build/payload/addons
+          envsubst < config/odoo.conf.template > .build/payload/config/odoo.conf
+          if compgen -G "addons/*" > /dev/null; then
+            cp -R addons/. .build/payload/addons/
+          fi
+          cp docker-compose.yml Caddyfile .build/payload/
+          cat > .build/payload/.env <<EOF
+          ODOO_DB_USER=$ODOO_DB_USER
+          ODOO_DB_PASSWORD=$ODOO_DB_PASSWORD
+          SUBDOMAIN=$SUBDOMAIN
+          EOF
+
+      - name: Pre-deploy DB backup
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "docker exec odoo-stack-db-1 pg_dump -U ${{ secrets.ODOO_DB_USER }} -Fc odoo > ~/odoo-pre-deploy-\$(date -u +%Y%m%dT%H%M%S).dump && \
+             ls -t ~/odoo-pre-deploy-*.dump | tail -n +8 | xargs -r rm"
+
+      - name: Rsync payload to VPS
+        run: |
+          rsync -avz --delete \
+            .build/payload/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/odoo-stack/
+
+      - name: Restart stack
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ~/odoo-stack && docker compose up -d --remove-orphans"
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://${{ secrets.SUBDOMAIN }}/web/database/selector" || true)
+            if [ "$code" = "200" ] || [ "$code" = "303" ] || [ "$code" = "302" ]; then
+              echo "Healthy (HTTP $code)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $code, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health check failed after 30 attempts"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ~/odoo-stack && docker compose logs --tail 50 odoo"
+          exit 1
