@@ -51,6 +51,7 @@ patch(PosOrder.prototype, {
             timeOnly,
             totalQty,
             balanceDue,
+            invoiceNo: (this.pos_reference || "").replace(/^Order\s+/, "").trim(),
         };
     },
 });

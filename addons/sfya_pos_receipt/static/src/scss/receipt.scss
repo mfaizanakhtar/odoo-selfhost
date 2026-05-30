@@ -53,6 +53,7 @@
         thead th.sfya-num,
         tbody td.sfya-num {
             text-align: right;
+            padding-left: 6px;
         }
 
         tbody td {
@@ -63,6 +64,7 @@
         tbody td.sfya-name {
             word-break: break-word;
             max-width: 60%;
+            padding-right: 6px;
         }
     }
 

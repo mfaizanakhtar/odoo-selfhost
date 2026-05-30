@@ -1,0 +1,17 @@
+image: odoo:18.0
+digest: sha256:b9fad113ae0274da19b769db65193bfdbcd1993128acd8b708bc842cbd7f4185
+extracted: 2026-05-30
+host: deploy@46.224.228.181 (odoo-stack-odoo-1)
+
+source paths inside the image:
+  /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/app/screens/receipt_screen/receipt/order_receipt.xml
+  /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/app/screens/receipt_screen/receipt/order_receipt.js
+  /usr/lib/python3/dist-packages/odoo/addons/point_of_sale/static/src/app/models/pos_order.js  (excerpt: lines 240-310)
+
+what this addon targets:
+  - order_receipt.xml: 7 xpath inherits (ReceiptHeader, OrderWidget,
+    pos-receipt-taxes, receipt-total/rounding/to-pay/paymentlines/receipt-change,
+    Powered-by-Odoo footer, pos-receipt-center-align footer, stray text-center)
+  - order_receipt.js: extends the OWL component via inherit (no JS patch)
+  - pos_order.js: patches PosOrder.prototype.export_for_printing and
+    PosOrder.prototype.getCashierName

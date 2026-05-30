@@ -22,7 +22,7 @@
                     <div t-if="props.data.partnerName">
                         Customer: <t t-esc="props.data.partnerName"/>
                     </div>
-                    <div>Invoice # : <t t-esc="props.data.name"/></div>
+                    <div>Invoice # : <t t-esc="props.data.invoiceNo"/></div>
                     <div t-if="props.data.cashier">
                         Sales By : <t t-esc="props.data.cashier"/>
                     </div>
@@ -110,6 +110,17 @@
              (the div containing <p>Powered by Odoo</p>) -->
         <xpath expr="//p[normalize-space(text())='Powered by Odoo']/.." position="replace">
             <div class="sfya-footer">Thank You For Shopping With Us</div>
+        </xpath>
+
+        <!-- 6. Remove the upstream pos-receipt-center-align footer div
+             (renders props.data.footer from pos.config.receipt_footer). -->
+        <xpath expr="//div[hasclass('pos-receipt-center-align')]" position="replace">
+            <t/>
+        </xpath>
+
+        <!-- 7. Remove stray text-center separator dashes div sibling of pos-receipt-taxes. -->
+        <xpath expr="//div[hasclass('text-center')]" position="replace">
+            <t/>
         </xpath>
 
     </t>
