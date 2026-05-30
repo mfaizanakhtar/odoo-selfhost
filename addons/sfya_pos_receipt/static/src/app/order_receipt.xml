@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="sfya_pos_receipt.OrderReceipt"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+
+        <!-- 1. Replace ReceiptHeader subcomponent with SFYA header markup -->
+        <xpath expr="//ReceiptHeader" position="replace">
+            <div class="sfya-header">
+                <div class="sfya-company" t-esc="props.data.headerData.company.name"/>
+                <div t-if="props.data.headerData.company.street"
+                     t-esc="props.data.headerData.company.street"/>
+                <div t-if="props.data.headerData.company.phone"
+                     t-esc="props.data.headerData.company.phone"/>
+            </div>
+            <div class="sfya-separator"/>
+            <div class="sfya-title">SALES INVOICE</div>
+            <div class="sfya-separator"/>
+            <div class="sfya-info">
+                <div>
+                    <div t-if="props.data.partnerName">
+                        Customer: <t t-esc="props.data.partnerName"/>
+                    </div>
+                    <div>Invoice # : <t t-esc="props.data.name"/></div>
+                    <div t-if="props.data.cashier">
+                        Sales By : <t t-esc="props.data.cashier"/>
+                    </div>
+                </div>
+                <div>
+                    <div>Date : <t t-esc="props.data.dateOnly"/></div>
+                    <div>Time : <t t-esc="props.data.timeOnly"/></div>
+                </div>
+            </div>
+            <div class="sfya-separator"/>
+        </xpath>
+
+        <!-- 2. Replace upstream OrderWidget with SFYA 4-col table -->
+        <xpath expr="//OrderWidget" position="replace">
+            <table class="sfya-lines-table">
+                <thead>
+                    <tr>
+                        <th class="sfya-name">Product Name</th>
+                        <th class="sfya-num">Qty</th>
+                        <th class="sfya-num">Rate</th>
+                        <th class="sfya-num">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="props.data.orderlines" t-as="line" t-key="line_index">
+                        <td class="sfya-name" t-esc="line.productName"/>
+                        <td class="sfya-num" t-esc="line.qty"/>
+                        <td class="sfya-num" t-esc="line.unitPrice"/>
+                        <td class="sfya-num" t-esc="line.price"/>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="sfya-separator"/>
+            <div class="sfya-total-qty">Total Qty : <t t-esc="props.data.totalQty"/></div>
+            <div class="sfya-separator"/>
+        </xpath>
+
+        <!-- 3. Replace the whole taxTotals+totals+payment+change block with SFYA totals -->
+        <xpath expr="//div[hasclass('pos-receipt-taxes')]" position="replace">
+            <div class="sfya-totals">
+                <div class="sfya-total-row">
+                    <span>Subtotal</span>
+                    <span t-esc="props.formatCurrency(props.data.total_without_tax)"/>
+                </div>
+                <div class="sfya-total-row sfya-grand">
+                    <span>Grand Total</span>
+                    <span t-esc="props.formatCurrency(props.data.amount_total)"/>
+                </div>
+                <div class="sfya-total-row">
+                    <span>Payment Received</span>
+                    <span t-esc="props.formatCurrency(props.data.total_paid)"/>
+                </div>
+                <div class="sfya-separator"/>
+                <div class="sfya-total-row sfya-grand" t-if="props.data.balanceDue >= 0">
+                    <span>Total Balance Due</span>
+                    <span t-esc="props.formatCurrency(props.data.balanceDue)"/>
+                </div>
+                <div class="sfya-total-row sfya-grand" t-else="">
+                    <span>Change Due</span>
+                    <span t-esc="props.formatCurrency(-props.data.balanceDue)"/>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- 4. Remove the upstream stand-alone TOTAL / rounding / paymentlines / change block.
+             These nodes are siblings under the outer t-if="!props.basic_receipt" wrapper.
+             We hide them by class/id so our new totals stay the source of truth. -->
+        <xpath expr="//div[hasclass('receipt-total')]" position="replace">
+            <t/>
+        </xpath>
+        <xpath expr="//div[hasclass('receipt-rounding')]" position="replace">
+            <t/>
+        </xpath>
+        <xpath expr="//div[hasclass('receipt-to-pay')]" position="replace">
+            <t/>
+        </xpath>
+        <xpath expr="//div[hasclass('paymentlines')]" position="replace">
+            <t/>
+        </xpath>
+        <xpath expr="//div[hasclass('receipt-change')]" position="replace">
+            <t/>
+        </xpath>
+
+        <!-- 5. Remove the bottom Powered by Odoo / order metadata footer
+             (the div containing <p>Powered by Odoo</p>) -->
+        <xpath expr="//p[normalize-space(text())='Powered by Odoo']/.." position="replace">
+            <div class="sfya-footer">Thank You For Shopping With Us</div>
+        </xpath>
+
+    </t>
+
+</templates>
