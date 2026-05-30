@@ -239,6 +239,7 @@ def main():
                 "type": "consu",
                 "is_storable": True,
                 "categ_id": categ_id,
+                "available_in_pos": True,
             }])
             created += 1
             print(f"  + {name} (id={tmpl_id})")
