@@ -40,7 +40,7 @@ jobs:
           if compgen -G "addons/*" > /dev/null; then
             cp -R addons/. .build/payload/addons/
           fi
-          cp docker-compose.yml Caddyfile .build/payload/
+          cp docker-compose.yml Caddyfile Dockerfile .build/payload/
           cat > .build/payload/.env <<EOF
           ODOO_DB_USER=$ODOO_DB_USER
           ODOO_DB_PASSWORD=$ODOO_DB_PASSWORD
@@ -62,7 +62,7 @@ jobs:
       - name: Restart stack
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ~/odoo-stack && docker compose up -d --remove-orphans"
+            "cd ~/odoo-stack && docker compose up -d --build --remove-orphans"
 
       - name: Health check
         run: |
