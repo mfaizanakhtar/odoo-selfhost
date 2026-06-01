@@ -18,18 +18,16 @@
             <div class="sfya-title">SALES INVOICE</div>
             <div class="sfya-separator"/>
             <div class="sfya-info">
-                <div>
-                    <div t-if="props.data.partnerName">
-                        Customer: <t t-esc="props.data.partnerName"/>
-                    </div>
-                    <div>Invoice # : <t t-esc="props.data.invoiceNo"/></div>
-                    <div t-if="props.data.cashier">
-                        Sales By : <t t-esc="props.data.cashier"/>
-                    </div>
+                <div t-if="props.data.partnerName">
+                    Customer: <t t-esc="props.data.partnerName"/>
                 </div>
-                <div>
-                    <div>Date : <t t-esc="props.data.dateOnly"/></div>
-                    <div>Time : <t t-esc="props.data.timeOnly"/></div>
+                <div class="sfya-info-pair">
+                    <span>Date : <t t-esc="props.data.dateOnly"/></span>
+                    <span>Time : <t t-esc="props.data.timeOnly"/></span>
+                </div>
+                <div class="sfya-info-pair">
+                    <span>Invoice # : <t t-esc="props.data.invoiceNo"/></span>
+                    <span t-if="props.data.cashier">Sales By : <t t-esc="props.data.cashier"/></span>
                 </div>
             </div>
             <div class="sfya-separator"/>
