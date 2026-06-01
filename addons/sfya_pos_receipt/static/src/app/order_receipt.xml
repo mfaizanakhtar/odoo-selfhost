@@ -56,7 +56,7 @@
                 </tbody>
             </table>
             <div class="sfya-separator"/>
-            <div class="sfya-total-qty">Total Qty : <t t-esc="props.data.totalQty"/></div>
+            <div class="sfya-total-qty">Total Qty : <span class="sfya-bold"><t t-esc="props.data.totalQty"/></span></div>
             <div class="sfya-separator"/>
         </xpath>
 

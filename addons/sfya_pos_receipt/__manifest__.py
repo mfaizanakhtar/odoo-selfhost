@@ -11,6 +11,8 @@
             'sfya_pos_receipt/static/src/app/order_receipt_patch.js',
             'sfya_pos_receipt/static/src/app/order_receipt.xml',
             'sfya_pos_receipt/static/src/scss/receipt.scss',
+            'sfya_pos_receipt/static/src/app/ticket_screen_patch.js',
+            'sfya_pos_receipt/static/src/app/ticket_screen.xml',
         ],
     },
     'installable': True,

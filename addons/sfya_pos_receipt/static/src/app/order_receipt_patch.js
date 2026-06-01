@@ -19,6 +19,15 @@ patch(PosOrder.prototype, {
     export_for_printing(baseUrl, headerData) {
         const data = super.export_for_printing(baseUrl, headerData);
 
+        const stripTrailingZeros = (s) =>
+            typeof s === "string" ? s.replace(/\.00(?!\d)/g, "") : s;
+        const cleanedOrderlines = (data.orderlines || []).map((l) => ({
+            ...l,
+            qty: stripTrailingZeros(l.qty),
+            unitPrice: stripTrailingZeros(l.unitPrice),
+            price: stripTrailingZeros(l.price),
+        }));
+
         const total = this.get_total_with_tax();
         const paid = this.get_total_paid();
         const balanceDue = total - paid;
@@ -46,6 +55,7 @@ patch(PosOrder.prototype, {
 
         return {
             ...data,
+            orderlines: cleanedOrderlines,
             partnerName: this.partner_id?.name || "",
             dateOnly,
             timeOnly,

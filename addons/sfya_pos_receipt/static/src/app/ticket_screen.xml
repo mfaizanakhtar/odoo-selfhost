@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="sfya_pos_receipt.TicketScreen"
+       t-inherit="point_of_sale.TicketScreen"
+       t-inherit-mode="extension">
+
+        <!-- Add header column for reprint icon (desktop, between Status and Delete) -->
+        <xpath expr="//div[hasclass('header-row')]/div[@name='delete']" position="before">
+            <div class="col very-narrow p-2" name="reprint"/>
+        </xpath>
+
+        <!-- Add reprint cell on each DESKTOP order row, immediately before delete cell -->
+        <xpath expr="//div[hasclass('order-row') and not(hasclass('mobileOrderList'))]/div[@name='delete']" position="before">
+            <div t-if="order.finalized" class="col very-narrow p-2 reprint-button text-center"
+                 t-on-click.stop="() => this.reprintOrder(order)">
+                <i class="fa fa-print" aria-hidden="true"/>
+            </div>
+            <div t-else="" class="col very-narrow p-2"/>
+        </xpath>
+
+        <!-- Mobile rows render trash button inline; add reprint icon in the same control area -->
+        <xpath expr="//div[hasclass('mobileOrderList')]//div[hasclass('delete-button')]" position="before">
+            <div t-if="order.finalized" class="col very-narrow p-2 rounded-2 reprint-button"
+                 t-on-click.stop="() => this.reprintOrder(order)">
+                <i class="fa fa-print" aria-hidden="true"/> Reprint
+            </div>
+        </xpath>
+
+    </t>
+</templates>

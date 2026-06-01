@@ -90,3 +90,12 @@
         margin-top: 8px;
     }
 }
+
+.reprint-button {
+    cursor: pointer;
+    color: #555;
+
+    &:hover {
+        color: #000;
+    }
+}
