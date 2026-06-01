@@ -112,3 +112,11 @@
         color: #000;
     }
 }
+
+// Kill the inner wrapper padding/margin around the receipt preview so the
+// rendered content uses the full container width. Upstream uses
+// `m-2 m-lg-3 p-3` bootstrap utilities here which steal ~24px on each side.
+.pos-receipt-container > div {
+    padding: 4px !important;
+    margin: 2px !important;
+}
