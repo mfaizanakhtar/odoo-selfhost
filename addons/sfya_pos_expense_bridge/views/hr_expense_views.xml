@@ -6,13 +6,19 @@
         <field name="model">hr.expense</field>
         <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
         <field name="arch" type="xml">
-            <field name="payment_mode" position="after">
-                <field name="affects_pos_cash"/>
+            <xpath expr="//div[@id='payment_mode']" position="after">
+                <label for="affects_pos_cash" string="POS Cash Drawer"/>
+                <div>
+                    <field name="affects_pos_cash"/>
+                    <span class="text-muted ms-1">
+                        Deduct this expense from the open POS session
+                    </span>
+                </div>
                 <field name="pos_cash_pending" readonly="1"
                        invisible="not pos_cash_pending"/>
                 <field name="pos_cash_session_id" readonly="1"
                        invisible="not pos_cash_session_id"/>
-            </field>
+            </xpath>
         </field>
     </record>
 
