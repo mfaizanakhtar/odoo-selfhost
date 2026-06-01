@@ -59,11 +59,18 @@
 
         thead th.sfya-num,
         tbody td.sfya-num {
-            text-align: right;
             font-size: 10px;
             padding-left: 4px;
             width: 1%;
             white-space: nowrap;
+        }
+
+        thead th.sfya-num {
+            text-align: center;
+        }
+
+        tbody td.sfya-num {
+            text-align: right;
         }
 
         tbody td {
