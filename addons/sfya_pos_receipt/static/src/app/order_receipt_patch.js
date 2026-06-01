@@ -22,7 +22,9 @@ patch(PosOrder.prototype, {
         const stripTrailingZeros = (s) =>
             typeof s === "string" ? s.replace(/\.00(?!\d)/g, "") : s;
         const stripCurrency = (s) =>
-            typeof s === "string" ? s.replace(/^[^\d-]+/, "").trim() : s;
+            typeof s === "string"
+                ? s.replace(/\s*Rs\.?\s*/gi, "").trim()
+                : s;
         const cleanedOrderlines = (data.orderlines || []).map((l) => ({
             ...l,
             qty: stripTrailingZeros(l.qty),
