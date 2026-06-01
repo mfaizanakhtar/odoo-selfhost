@@ -136,3 +136,26 @@
     max-width: 100% !important;
     border-width: 0 !important;
 }
+
+// Thermal print fill. Upstream pins .pos-receipt to width:266px (~70mm)
+// inside @media print, so on 80mm thermal paper there's a ~10mm gutter
+// each side. Force exact 80mm width + zero @page margin so receipt
+// fills the roll edge to edge. Width is set in mm (not %) because the
+// .render-container parent has no explicit width so % would collapse.
+@page {
+    margin: 0 !important;
+}
+
+@media print {
+    .render-container {
+        left: 0 !important;
+        top: 0 !important;
+    }
+    .render-container .pos-receipt {
+        width: 80mm !important;
+        max-width: 80mm !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        box-sizing: border-box !important;
+    }
+}
