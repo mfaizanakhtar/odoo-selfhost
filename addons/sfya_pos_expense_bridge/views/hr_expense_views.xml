@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_expense_form_inherit_sfya_pos" model="ir.ui.view">
+        <field name="name">hr.expense.form.inherit.sfya.pos</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+        <field name="arch" type="xml">
+            <field name="payment_mode" position="after">
+                <field name="affects_pos_cash"/>
+                <field name="pos_cash_pending" readonly="1"
+                       invisible="not pos_cash_pending"/>
+                <field name="pos_cash_session_id" readonly="1"
+                       invisible="not pos_cash_session_id"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
