@@ -40,7 +40,7 @@
             <table class="sfya-lines-table">
                 <thead>
                     <tr>
-                        <th class="sfya-name">Product Name</th>
+                        <th class="sfya-name">Product</th>
                         <th class="sfya-num">Qty</th>
                         <th class="sfya-num">Rate</th>
                         <th class="sfya-num">Total</th>
