@@ -136,25 +136,3 @@
     max-width: 100% !important;
     border-width: 0 !important;
 }
-
-// Print overrides. Upstream forces .pos-receipt to width:266px in print
-// (thermal-paper assumption). When printing to A4 / desktop browser this
-// leaves huge whitespace around the receipt. Override to use full page
-// width and zero @page margin so browser chrome (headers/footers/URL)
-// has no room. NOTE: browser-added print headers (date, page URL, page
-// number) are controlled by the print dialog's "Headers and footers"
-// toggle — CSS cannot remove them.
-@page {
-    margin: 0 !important;
-}
-
-@media print {
-    .render-container .pos-receipt {
-        width: auto !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 8px !important;
-        font-size: 12px !important;
-        border: none !important;
-    }
-}
