@@ -29,7 +29,7 @@ patch(PosOrder.prototype, {
             ...l,
             qty: stripTrailingZeros(l.qty),
             unitPrice: stripCurrency(stripTrailingZeros(l.unitPrice)),
-            price: stripTrailingZeros(l.price),
+            price: stripCurrency(stripTrailingZeros(l.price)),
         }));
 
         const total = this.get_total_with_tax();
