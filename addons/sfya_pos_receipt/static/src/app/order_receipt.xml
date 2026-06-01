@@ -110,6 +110,7 @@
              (the div containing <p>Powered by Odoo</p>) -->
         <xpath expr="//p[normalize-space(text())='Powered by Odoo']/.." position="replace">
             <div class="sfya-footer">Thank You For Shopping With Us</div>
+            <div class="sfya-powered">Powered by Odoo</div>
         </xpath>
 
         <!-- 6. Remove the upstream pos-receipt-center-align footer div

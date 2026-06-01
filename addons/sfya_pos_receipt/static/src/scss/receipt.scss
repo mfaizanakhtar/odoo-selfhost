@@ -54,6 +54,8 @@
         tbody td.sfya-num {
             text-align: right;
             padding-left: 6px;
+            width: 1%;
+            white-space: nowrap;
         }
 
         tbody td {
@@ -63,7 +65,6 @@
 
         tbody td.sfya-name {
             word-break: break-word;
-            max-width: 60%;
             padding-right: 6px;
         }
     }
@@ -88,6 +89,13 @@
     .sfya-footer {
         text-align: center;
         margin-top: 8px;
+    }
+
+    .sfya-powered {
+        text-align: center;
+        font-size: 10px;
+        margin-top: 6px;
+        color: #555;
     }
 }
 
