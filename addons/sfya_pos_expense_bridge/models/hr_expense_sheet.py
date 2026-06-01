@@ -4,16 +4,15 @@ from odoo import models
 class HrExpenseSheet(models.Model):
     _inherit = 'hr.expense.sheet'
 
-    def write(self, vals):
-        prev_states = {sheet.id: sheet.state for sheet in self}
-        res = super().write(vals)
+    def _compute_state(self):
+        # `state` is a stored compute that flips to 'done' when payment is
+        # registered (via account_move_ids.payment_state). Direct write()
+        # hooks don't fire on recomputes, so we wrap the compute instead.
+        prev = {s.id: s.state for s in self}
+        super()._compute_state()
         for sheet in self:
-            if (
-                prev_states.get(sheet.id) != 'done'
-                and sheet.state == 'done'
-            ):
+            if prev.get(sheet.id) != 'done' and sheet.state == 'done':
                 sheet._sfya_push_pos_cash_out()
-        return res
 
     def _sfya_push_pos_cash_out(self):
         """Mirror flagged expense lines as POS Cash Out on open session.

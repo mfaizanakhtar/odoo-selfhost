@@ -11,16 +11,18 @@ class PosSession(models.Model):
         return res
 
     def _sfya_sweep_pending_expenses(self):
-        """Consume any hr.expense rows queued while no session was open.
+        """Consume any flagged hr.expense rows that haven't been mirrored.
 
-        Each pending expense flagged affects_pos_cash creates a Cash Out
-        line on this newly opened session, then the queue flag is cleared.
+        Picks up both expenses explicitly queued (pos_cash_pending=True)
+        and any paid expenses with affects_pos_cash=True that never got
+        attached to a session (e.g. paid before this addon was installed
+        or while no session was open).
         """
         self.ensure_one()
         pending = self.env['hr.expense'].sudo().search([
-            ('pos_cash_pending', '=', True),
-            ('pos_cash_session_id', '=', False),
+            ('state', '=', 'done'),
             ('affects_pos_cash', '=', True),
+            ('pos_cash_session_id', '=', False),
         ])
         for exp in pending:
             self.try_cash_in_out(
