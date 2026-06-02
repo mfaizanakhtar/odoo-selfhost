@@ -33,8 +33,16 @@ patch(PosOrder.prototype, {
         }));
 
         const total = this.get_total_with_tax();
-        const paid = this.get_total_paid();
-        const balanceDue = total - paid;
+        const payments = this.payment_ids || [];
+        const isCredit = (p) => p.payment_method_id?.type === "pay_later";
+        const paymentReceived = payments
+            .filter((p) => !isCredit(p))
+            .reduce((s, p) => s + (p.amount || 0), 0);
+        const onCredit = payments
+            .filter(isCredit)
+            .reduce((s, p) => s + (p.amount || 0), 0);
+        const balanceDue = onCredit;
+        const changeDue = Math.max(0, paymentReceived + onCredit - total);
 
         let dateOnly = "";
         let timeOnly = "";
@@ -64,7 +72,10 @@ patch(PosOrder.prototype, {
             dateOnly,
             timeOnly,
             totalQty,
+            paymentReceived,
+            onCredit,
             balanceDue,
+            changeDue,
             invoiceNo: (this.pos_reference || "").replace(/^Order\s+/, "").trim(),
         };
     },

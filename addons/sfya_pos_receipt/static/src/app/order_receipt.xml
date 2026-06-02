@@ -71,16 +71,20 @@
                 </div>
                 <div class="sfya-total-row">
                     <span>Payment Received</span>
-                    <span t-esc="props.formatCurrency(props.data.total_paid)"/>
+                    <span t-esc="props.formatCurrency(props.data.paymentReceived)"/>
+                </div>
+                <div class="sfya-total-row" t-if="props.data.onCredit > 0">
+                    <span>On Credit (Customer A/c)</span>
+                    <span t-esc="props.formatCurrency(props.data.onCredit)"/>
                 </div>
                 <div class="sfya-separator"/>
-                <div class="sfya-total-row sfya-grand" t-if="props.data.balanceDue >= 0">
+                <div class="sfya-total-row sfya-grand" t-if="props.data.changeDue > 0">
+                    <span>Change Due</span>
+                    <span t-esc="props.formatCurrency(props.data.changeDue)"/>
+                </div>
+                <div class="sfya-total-row sfya-grand">
                     <span>Total Balance Due</span>
                     <span t-esc="props.formatCurrency(props.data.balanceDue)"/>
-                </div>
-                <div class="sfya-total-row sfya-grand" t-else="">
-                    <span>Change Due</span>
-                    <span t-esc="props.formatCurrency(-props.data.balanceDue)"/>
                 </div>
             </div>
         </xpath>
