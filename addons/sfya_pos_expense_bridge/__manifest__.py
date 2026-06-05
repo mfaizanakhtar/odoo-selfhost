@@ -5,7 +5,7 @@
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
     'license': 'LGPL-3',
-    'depends': ['point_of_sale', 'hr_expense'],
+    'depends': ['point_of_sale', 'hr', 'hr_expense'],
     'data': [
         'views/hr_expense_views.xml',
     ],
