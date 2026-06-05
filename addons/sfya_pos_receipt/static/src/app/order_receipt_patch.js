@@ -41,7 +41,10 @@ patch(PosOrder.prototype, {
         const onCredit = payments
             .filter(isCredit)
             .reduce((s, p) => s + (p.amount || 0), 0);
-        const balanceDue = onCredit;
+        const prevBalanceRaw = this.prev_balance ?? 0;
+        const prevDue = Math.max(0, prevBalanceRaw);
+        const advance = Math.max(0, -prevBalanceRaw);
+        const balanceDue = Math.max(0, prevBalanceRaw + onCredit);
         const changeDue = Math.max(0, paymentReceived + onCredit - total);
 
         let dateOnly = "";
@@ -74,6 +77,8 @@ patch(PosOrder.prototype, {
             totalQty,
             paymentReceived,
             onCredit,
+            prevDue,
+            advance,
             balanceDue,
             changeDue,
             invoiceNo: (this.pos_reference || "").replace(/^Order\s+/, "").trim(),
