@@ -1,0 +1,21 @@
+{
+    'name': 'SFYA Customer Statement',
+    'version': '18.0.1.0.0',
+    'summary': 'Per-customer statement with item-level detail (POS, invoices, payments, manual entries) + opening balance wizard',
+    'category': 'Accounting',
+    'author': 'SFYA Enterprises',
+    'license': 'LGPL-3',
+    'depends': ['account', 'point_of_sale'],
+    'data': [
+        'security/ir.model.access.csv',
+        'wizards/opening_balance_wizard_views.xml',
+        'wizards/statement_wizard_views.xml',
+        'reports/statement_report_action.xml',
+        'reports/statement_report.xml',
+        'views/res_partner_views.xml',
+    ],
+    'post_init_hook': '_post_init_create_opening_balance_account',
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}

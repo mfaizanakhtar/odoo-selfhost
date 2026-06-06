@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sfya_opening_balance_wizard_user,sfya.opening.balance.wizard.user,model_sfya_opening_balance_wizard,account.group_account_invoice,1,1,1,1
+access_sfya_opening_balance_wizard_manager,sfya.opening.balance.wizard.manager,model_sfya_opening_balance_wizard,account.group_account_manager,1,1,1,1
+access_sfya_statement_wizard_user,sfya.statement.wizard.user,model_sfya_statement_wizard,account.group_account_invoice,1,1,1,1
+access_sfya_statement_wizard_manager,sfya.statement.wizard.manager,model_sfya_statement_wizard,account.group_account_manager,1,1,1,1

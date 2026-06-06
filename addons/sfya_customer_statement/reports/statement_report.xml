@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_customer_statement">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h2>Customer Statement</h2>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong t-esc="data['partner']['name']"/>
+                            <div t-if="data['partner']['street']" t-esc="data['partner']['street']"/>
+                            <div t-if="data['partner']['phone']">Phone: <span t-esc="data['partner']['phone']"/></div>
+                            <div t-if="data['partner']['email']">Email: <span t-esc="data['partner']['email']"/></div>
+                            <div t-if="data['partner']['vat']">VAT: <span t-esc="data['partner']['vat']"/></div>
+                        </div>
+                        <div class="col-6 text-right">
+                            <div>Period: <span t-esc="data['date_from']"/> to <span t-esc="data['date_to']"/></div>
+                            <div>Opening Balance:
+                                <span t-esc="'%s %.2f' % (data['currency_symbol'], data['opening_balance'])"/>
+                            </div>
+                            <div><strong>Closing Balance:
+                                <span t-esc="'%s %.2f' % (data['currency_symbol'], data['closing_balance'])"/>
+                            </strong></div>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Document</th>
+                                <th>Description</th>
+                                <th class="text-right">Debit</th>
+                                <th class="text-right">Credit</th>
+                                <th class="text-right">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="data['rows']" t-as="row">
+                                <tr>
+                                    <td t-esc="row['date']"/>
+                                    <td t-esc="row['kind_label']"/>
+                                    <td t-esc="row['doc_name']"/>
+                                    <td t-esc="row['note']"/>
+                                    <td class="text-right" t-esc="'%.2f' % row['debit']"/>
+                                    <td class="text-right" t-esc="'%.2f' % row['credit']"/>
+                                    <td class="text-right" t-esc="'%.2f' % row['balance']"/>
+                                </tr>
+                                <tr t-foreach="row['lines']" t-as="line">
+                                    <td/>
+                                    <td/>
+                                    <td/>
+                                    <td colspan="2" style="padding-left: 30px;">
+                                        <span t-esc="line['name']"/>
+                                        — <span t-esc="line['qty']"/> ×
+                                        <span t-esc="'%.2f' % line['price_unit']"/>
+                                    </td>
+                                    <td class="text-right" t-esc="'%.2f' % line['subtotal']"/>
+                                    <td/>
+                                </tr>
+                            </t>
+                            <tr style="border-top: 2px solid #000;">
+                                <td colspan="6"><strong>Opening Balance</strong></td>
+                                <td class="text-right">
+                                    <strong t-esc="'%.2f' % data['opening_balance']"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="row" t-if="data['aging']">
+                        <div class="col-12">
+                            <h4>Aging (Open Items at <span t-esc="data['date_to']"/>)</h4>
+                            <table class="table table-sm" style="width: 60%;">
+                                <thead>
+                                    <tr>
+                                        <th>Bucket</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="data['aging']" t-as="bucket">
+                                        <td t-esc="bucket['label']"/>
+                                        <td class="text-right" t-esc="'%s %.2f' % (data['currency_symbol'], bucket['amount'])"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

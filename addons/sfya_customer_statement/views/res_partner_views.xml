@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_partner_form_sfya_statement" model="ir.ui.view">
+        <field name="name">res.partner.form.sfya.statement</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="%(action_statement_wizard)d" type="action"
+                        class="oe_stat_button" icon="fa-file-text-o"
+                        context="{'active_id': id}">
+                    <span class="o_stat_text">Statement</span>
+                </button>
+                <button name="%(action_opening_balance_wizard)d" type="action"
+                        class="oe_stat_button" icon="fa-plus-circle"
+                        context="{'active_id': id}">
+                    <span class="o_stat_text">Opening Bal.</span>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

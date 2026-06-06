@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_opening_balance_wizard_form" model="ir.ui.view">
+        <field name="name">sfya.opening.balance.wizard.form</field>
+        <field name="model">sfya.opening.balance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Set Opening Balance">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="amount"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="journal_id"/>
+                            <field name="description"/>
+                            <field name="force"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        Positive amount means the customer owes you. Negative
+                        means they have advance credit with you. A journal
+                        entry will be posted on the chosen date crediting
+                        Opening Balance Equity.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_create_move" type="object"
+                            string="Post Opening Balance" class="btn-primary"/>
+                    <button special="cancel" string="Cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_opening_balance_wizard" model="ir.actions.act_window">
+        <field name="name">Set Opening Balance</field>
+        <field name="res_model">sfya.opening.balance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_view_types">form</field>
+    </record>
+</odoo>
