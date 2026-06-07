@@ -14,15 +14,8 @@
                             border-right: 1px solid #dee2e6;
                         }
                         table.stmt tbody td { border-top: 0 !important; border-bottom: 0 !important; }
-                        table.stmt tbody tr.entry-sep td {
-                            padding: 0 !important;
-                            border: 0 !important;
-                            background: transparent !important;
-                            box-shadow: none !important;
-                        }
-                        table.stmt tbody tr.entry-sep td > div {
-                            height: 3px;
-                            background-color: #6c757d;
+                        table.stmt tbody tr.entry-start td {
+                            border-top: 3px solid #6c757d !important;
                         }
                     </style>
                     <h2>Customer Statement</h2>
@@ -80,9 +73,8 @@
                             </tr>
 
                             <t t-foreach="data['rows']" t-as="row">
-                                <tr class="entry-sep"><td colspan="10"><div/></td></tr>
                                 <t t-if="not row['lines']">
-                                    <tr>
+                                    <tr class="entry-start">
                                         <td t-esc="row['date_str']"/>
                                         <td t-esc="row['doc_name']"/>
                                         <td t-esc="row['kind_label']"/>
@@ -102,7 +94,7 @@
                                 <t t-else="">
                                     <t t-set="rspan" t-value="len(row['lines'])"/>
                                     <t t-foreach="row['lines']" t-as="line">
-                                        <tr>
+                                        <tr t-att-class="'entry-start' if line_first else ''">
                                             <t t-if="line_first">
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['date_str']"/>
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['doc_name']"/>
