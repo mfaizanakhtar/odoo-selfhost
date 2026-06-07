@@ -13,13 +13,14 @@
                         table.stmt td:nth-child(9), table.stmt th:nth-child(9) {
                             border-right: 1px solid #dee2e6;
                         }
-                        table.stmt tbody td { border-top: 0; border-bottom: 0; }
+                        table.stmt tbody td { border-top: 0 !important; border-bottom: 0 !important; }
                         table.stmt tbody tr.entry-sep td {
-                            border-top: 2px solid #adb5bd;
-                            border-right: 0 !important;
-                            padding: 0;
-                            height: 0;
-                            line-height: 0;
+                            background-color: #6c757d !important;
+                            box-shadow: none !important;
+                            height: 2px !important;
+                            padding: 0 !important;
+                            line-height: 0 !important;
+                            border: 0 !important;
                         }
                     </style>
                     <h2>Customer Statement</h2>
