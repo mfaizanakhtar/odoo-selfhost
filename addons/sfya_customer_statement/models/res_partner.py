@@ -120,6 +120,7 @@ class ResPartner(models.Model):
                 ('date', '<=', date_to),
                 ('parent_state', '=', 'posted'),
                 ('move_id.move_type', '=', 'entry'),
+                ('move_id.ref', 'not like', 'OPENING-BAL-%'),
             ]
             for ml in self.env['account.move.line'].search(je_domain):
                 rows.append({
@@ -185,19 +186,29 @@ class ResPartner(models.Model):
         }
 
     def _compute_opening_balance(self, date_from):
+        """Pre-period AR balance + all OPENING-BAL-* JEs (any date).
+
+        Opening-balance JEs created via the wizard represent the customer's
+        migrated starting balance regardless of their posting date, so they
+        belong in the opening figure even if dated inside the statement
+        period. They are excluded from the in-period JE listing.
+        """
         self.ensure_one()
         ar = self.property_account_receivable_id
         if not ar:
             return 0.0
         self.env.cr.execute(
             """
-            SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0)
+            SELECT COALESCE(SUM(aml.debit), 0) - COALESCE(SUM(aml.credit), 0)
             FROM account_move_line aml
             JOIN account_move am ON am.id = aml.move_id
             WHERE aml.partner_id = %s
               AND aml.account_id = %s
-              AND aml.date < %s
               AND am.state = 'posted'
+              AND (
+                aml.date < %s
+                OR am.ref LIKE 'OPENING-BAL-%%'
+              )
             """,
             (self.id, ar.id, date_from),
         )
