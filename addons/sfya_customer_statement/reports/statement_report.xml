@@ -4,7 +4,7 @@
         <t t-call="web.html_container">
             <t t-call="web.external_layout">
                 <div class="page">
-                    <h2 class="text-center">Account Ledger</h2>
+                    <h2>Customer Statement</h2>
 
                     <div class="row mb-3">
                         <div class="col-6">
@@ -16,13 +16,16 @@
                         </div>
                         <div class="col-6 text-right">
                             <div>Period: <span t-esc="data['date_from_str']"/> to <span t-esc="data['date_to_str']"/></div>
+                            <div>Opening Balance:
+                                <span t-esc="'%s %.2f' % (data['currency_symbol'], data['opening_balance'])"/>
+                            </div>
                             <div><strong>Closing Balance:
                                 <span t-esc="'%s %.2f' % (data['currency_symbol'], data['closing_balance'])"/>
                             </strong></div>
                         </div>
                     </div>
 
-                    <table class="table table-sm table-bordered">
+                    <table class="table table-sm">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -55,7 +58,7 @@
 
                             <t t-foreach="data['rows']" t-as="row">
                                 <t t-if="not row['lines']">
-                                    <tr>
+                                    <tr style="border-top: 1px solid #dee2e6;">
                                         <td t-esc="row['date_str']"/>
                                         <td t-esc="row['doc_name']"/>
                                         <td t-esc="row['note']"/>
@@ -73,7 +76,7 @@
                                 </t>
                                 <t t-else="">
                                     <t t-foreach="row['lines']" t-as="line">
-                                        <tr>
+                                        <tr t-att-style="'border-top: 1px solid #dee2e6;' if line_first else ''">
                                             <td>
                                                 <t t-if="line_first" t-esc="row['date_str']"/>
                                             </td>
