@@ -10,7 +10,8 @@
                         table.stmt td:nth-child(3), table.stmt th:nth-child(3),
                         table.stmt td:nth-child(7), table.stmt th:nth-child(7),
                         table.stmt td:nth-child(8), table.stmt th:nth-child(8),
-                        table.stmt td:nth-child(9), table.stmt th:nth-child(9) {
+                        table.stmt td:nth-child(9), table.stmt th:nth-child(9),
+                        table.stmt tbody tr td:last-child:nth-child(4) {
                             border-right: 1px solid #dee2e6;
                         }
                         table.stmt tbody td { border-top: 0 !important; border-bottom: 0 !important; }
