@@ -7,11 +7,14 @@
                     <style>
                         table.stmt td:nth-child(1), table.stmt th:nth-child(1),
                         table.stmt td:nth-child(2), table.stmt th:nth-child(2),
-                        table.stmt td:nth-child(6), table.stmt th:nth-child(6),
+                        table.stmt td:nth-child(3), table.stmt th:nth-child(3),
                         table.stmt td:nth-child(7), table.stmt th:nth-child(7),
-                        table.stmt td:nth-child(8), table.stmt th:nth-child(8) {
+                        table.stmt td:nth-child(8), table.stmt th:nth-child(8),
+                        table.stmt td:nth-child(9), table.stmt th:nth-child(9) {
                             border-right: 1px solid #dee2e6;
                         }
+                        table.stmt tbody td { border-top: 0; }
+                        table.stmt tbody tr.entry-start td { border-top: 2px solid #adb5bd; }
                     </style>
                     <h2>Customer Statement</h2>
 
@@ -39,6 +42,7 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Voucher</th>
+                                <th>Type</th>
                                 <th>Descriptions</th>
                                 <th class="text-right">Qty</th>
                                 <th class="text-right">@</th>
@@ -49,9 +53,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
+                            <tr class="entry-start">
                                 <td t-esc="data['opening_row']['date_str']"/>
                                 <td t-esc="data['opening_row']['doc_name']"/>
+                                <td>Opening</td>
                                 <td t-esc="data['opening_row']['note']"/>
                                 <td/>
                                 <td/>
@@ -67,9 +72,10 @@
 
                             <t t-foreach="data['rows']" t-as="row">
                                 <t t-if="not row['lines']">
-                                    <tr style="border-top: 2px solid #adb5bd;">
+                                    <tr class="entry-start">
                                         <td t-esc="row['date_str']"/>
                                         <td t-esc="row['doc_name']"/>
+                                        <td t-esc="row['kind_label']"/>
                                         <td t-esc="row['note']"/>
                                         <td/>
                                         <td/>
@@ -86,10 +92,11 @@
                                 <t t-else="">
                                     <t t-set="rspan" t-value="len(row['lines'])"/>
                                     <t t-foreach="row['lines']" t-as="line">
-                                        <tr t-att-style="'border-top: 2px solid #adb5bd;' if line_first else ''">
+                                        <tr t-att-class="'entry-start' if line_first else ''">
                                             <t t-if="line_first">
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['date_str']"/>
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['doc_name']"/>
+                                                <td class="align-middle" t-att-rowspan="rspan" t-esc="row['kind_label']"/>
                                             </t>
                                             <td t-esc="line['name']"/>
                                             <td class="text-right" t-esc="'%g' % line['qty']"/>
