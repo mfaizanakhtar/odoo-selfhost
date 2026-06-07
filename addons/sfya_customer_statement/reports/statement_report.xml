@@ -67,7 +67,7 @@
 
                             <t t-foreach="data['rows']" t-as="row">
                                 <t t-if="not row['lines']">
-                                    <tr style="border-top: 1px solid #dee2e6;">
+                                    <tr style="border-top: 2px solid #adb5bd;">
                                         <td t-esc="row['date_str']"/>
                                         <td t-esc="row['doc_name']"/>
                                         <td t-esc="row['note']"/>
@@ -86,13 +86,11 @@
                                 <t t-else="">
                                     <t t-set="rspan" t-value="len(row['lines'])"/>
                                     <t t-foreach="row['lines']" t-as="line">
-                                        <tr t-att-style="'border-top: 1px solid #dee2e6;' if line_first else ''">
-                                            <td>
-                                                <t t-if="line_first" t-esc="row['date_str']"/>
-                                            </td>
-                                            <td>
-                                                <t t-if="line_first" t-esc="row['doc_name']"/>
-                                            </td>
+                                        <tr t-att-style="'border-top: 2px solid #adb5bd;' if line_first else ''">
+                                            <t t-if="line_first">
+                                                <td class="align-middle" t-att-rowspan="rspan" t-esc="row['date_str']"/>
+                                                <td class="align-middle" t-att-rowspan="rspan" t-esc="row['doc_name']"/>
+                                            </t>
                                             <td t-esc="line['name']"/>
                                             <td class="text-right" t-esc="'%g' % line['qty']"/>
                                             <td class="text-right" t-esc="'%.2f' % line['price_unit']"/>
