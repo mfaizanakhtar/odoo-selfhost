@@ -15,12 +15,14 @@
                         }
                         table.stmt tbody td { border-top: 0 !important; border-bottom: 0 !important; }
                         table.stmt tbody tr.entry-sep td {
-                            background-color: #6c757d !important;
-                            box-shadow: none !important;
-                            height: 2px !important;
                             padding: 0 !important;
-                            line-height: 0 !important;
                             border: 0 !important;
+                            background: transparent !important;
+                            box-shadow: none !important;
+                        }
+                        table.stmt tbody tr.entry-sep td > div {
+                            height: 3px;
+                            background-color: #6c757d;
                         }
                     </style>
                     <h2>Customer Statement</h2>
@@ -78,7 +80,7 @@
                             </tr>
 
                             <t t-foreach="data['rows']" t-as="row">
-                                <tr class="entry-sep"><td colspan="10"/></tr>
+                                <tr class="entry-sep"><td colspan="10"><div/></td></tr>
                                 <t t-if="not row['lines']">
                                     <tr>
                                         <td t-esc="row['date_str']"/>
