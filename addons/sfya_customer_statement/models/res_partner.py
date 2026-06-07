@@ -29,10 +29,6 @@ class ResPartner(models.Model):
                 p.amount for p in order.payment_ids
                 if p.payment_method_id.type != 'pay_later'
             )
-            on_credit = sum(
-                p.amount for p in order.payment_ids
-                if p.payment_method_id.type == 'pay_later'
-            )
             lines = [{
                 'name': l.product_id.display_name or l.full_product_name,
                 'qty': l.qty,
@@ -48,7 +44,7 @@ class ResPartner(models.Model):
                 'doc_id': order.id,
                 'doc_model': 'pos.order',
                 'lines': lines,
-                'note': _('Received %(c)s, On Credit %(d)s', c=cash_received, d=on_credit),
+                'note': '',
                 'debit': order.amount_total,
                 'credit': cash_received,
                 'balance': 0.0,
@@ -104,13 +100,10 @@ class ResPartner(models.Model):
                 'doc_name': pay.name,
                 'doc_id': pay.id,
                 'doc_model': 'account.payment',
-                'lines': [{
-                    'name': pay.journal_id.name,
-                    'qty': 1,
-                    'price_unit': pay.amount,
-                    'subtotal': pay.amount,
-                }],
-                'note': pay.ref or '',
+                'lines': [],
+                'note': _('Payment - %s', pay.journal_id.name) + (
+                    ' (%s)' % pay.ref if pay.ref else ''
+                ),
                 'debit': 0.0,
                 'credit': pay.amount,
                 'balance': 0.0,
@@ -137,13 +130,8 @@ class ResPartner(models.Model):
                     'doc_name': ml.move_id.name,
                     'doc_id': ml.move_id.id,
                     'doc_model': 'account.move',
-                    'lines': [{
-                        'name': ml.name or ml.move_id.ref or '',
-                        'qty': 1,
-                        'price_unit': ml.debit - ml.credit,
-                        'subtotal': ml.debit - ml.credit,
-                    }],
-                    'note': ml.move_id.ref or '',
+                    'lines': [],
+                    'note': ml.name or ml.move_id.ref or _('Journal Entry'),
                     'debit': ml.debit,
                     'credit': ml.credit,
                     'balance': 0.0,
@@ -155,10 +143,20 @@ class ResPartner(models.Model):
         for r in rows:
             running += r['debit'] - r['credit']
             r['balance'] = running
+            r['date_str'] = r['date'].strftime('%d-%m-%Y') if r['date'] else ''
         closing = running
 
         # Reverse for display (latest first)
         rows.reverse()
+
+        opening_row = {
+            'date_str': date_from.strftime('%d-%m-%Y'),
+            'doc_name': _('OPEN'),
+            'note': _('Opening Balance'),
+            'debit': opening if opening >= 0 else 0.0,
+            'credit': -opening if opening < 0 else 0.0,
+            'balance': opening,
+        }
 
         return {
             'partner': {
@@ -176,7 +174,10 @@ class ResPartner(models.Model):
             },
             'date_from': date_from,
             'date_to': date_to,
+            'date_from_str': date_from.strftime('%d-%m-%Y'),
+            'date_to_str': date_to.strftime('%d-%m-%Y'),
             'opening_balance': opening,
+            'opening_row': opening_row,
             'rows': rows,
             'closing_balance': closing,
             'aging': self._compute_aging_buckets(date_to),
