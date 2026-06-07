@@ -110,8 +110,12 @@ class ResPartner(models.Model):
             })
 
         # Manual journal entries on partner's AR account (excludes auto-generated
-        # invoice/payment moves which are move_type != 'entry')
+        # invoice/payment moves which are move_type != 'entry'). Opening-balance
+        # JEs (wizard ref or any move touching the Opening Balance Equity
+        # account) are rolled into the opening figure instead.
         ar = self.property_account_receivable_id
+        opening_eq = self.env.company.sfya_opening_balance_account_id
+        opening_move_ids = self._get_opening_balance_move_ids(opening_eq)
         if ar:
             je_domain = [
                 ('partner_id', '=', self.id),
@@ -122,6 +126,8 @@ class ResPartner(models.Model):
                 ('move_id.move_type', '=', 'entry'),
                 ('move_id.ref', 'not like', 'OPENING-BAL-%'),
             ]
+            if opening_move_ids:
+                je_domain.append(('move_id', 'not in', list(opening_move_ids)))
             for ml in self.env['account.move.line'].search(je_domain):
                 rows.append({
                     'date': ml.date,
@@ -185,20 +191,51 @@ class ResPartner(models.Model):
             'currency_symbol': self.env.company.currency_id.symbol or '',
         }
 
-    def _compute_opening_balance(self, date_from):
-        """Pre-period AR balance + all OPENING-BAL-* JEs (any date).
+    def _get_opening_balance_move_ids(self, opening_eq):
+        """Return set of move ids that look like opening balance entries.
 
-        Opening-balance JEs created via the wizard represent the customer's
-        migrated starting balance regardless of their posting date, so they
-        belong in the opening figure even if dated inside the statement
-        period. They are excluded from the in-period JE listing.
+        Catches both wizard-created moves (ref LIKE OPENING-BAL-*) and
+        manual JEs that hit the company's Opening Balance Equity account.
+        """
+        self.ensure_one()
+        ids = set()
+        moves_by_ref = self.env['account.move'].search([
+            ('partner_id', '=', self.id),
+            ('ref', '=like', 'OPENING-BAL-%'),
+            ('state', '=', 'posted'),
+        ])
+        ids.update(moves_by_ref.ids)
+        if opening_eq:
+            lines_by_account = self.env['account.move.line'].search([
+                ('partner_id', '=', self.id),
+                ('account_id', '=', opening_eq.id),
+                ('parent_state', '=', 'posted'),
+            ])
+            ids.update(lines_by_account.move_id.ids)
+        return ids
+
+    def _compute_opening_balance(self, date_from):
+        """Pre-period AR balance + all opening-balance JEs (any date).
+
+        Opening-balance JEs (wizard-created or manual against the Opening
+        Balance Equity account) represent the customer's migrated starting
+        balance regardless of their posting date, so they belong in the
+        opening figure even if dated inside the statement period. They are
+        excluded from the in-period JE listing.
         """
         self.ensure_one()
         ar = self.property_account_receivable_id
         if not ar:
             return 0.0
+        opening_eq = self.env.company.sfya_opening_balance_account_id
+        opening_move_ids = self._get_opening_balance_move_ids(opening_eq)
+        params = [self.id, ar.id, date_from]
+        extra_or = ''
+        if opening_move_ids:
+            extra_or = ' OR aml.move_id IN %s'
+            params.append(tuple(opening_move_ids))
         self.env.cr.execute(
-            """
+            f"""
             SELECT COALESCE(SUM(aml.debit), 0) - COALESCE(SUM(aml.credit), 0)
             FROM account_move_line aml
             JOIN account_move am ON am.id = aml.move_id
@@ -208,9 +245,10 @@ class ResPartner(models.Model):
               AND (
                 aml.date < %s
                 OR am.ref LIKE 'OPENING-BAL-%%'
+                {extra_or}
               )
             """,
-            (self.id, ar.id, date_from),
+            tuple(params),
         )
         return float(self.env.cr.fetchone()[0] or 0.0)
 
