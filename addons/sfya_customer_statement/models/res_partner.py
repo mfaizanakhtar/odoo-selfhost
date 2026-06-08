@@ -140,6 +140,32 @@ class ResPartner(models.Model):
                 'balance': 0.0,
             })
 
+        # Vendor payments (we paid them — reduces our debt, raises net owed to us)
+        vpay_domain = [
+            ('partner_id', '=', self.id),
+            ('partner_type', '=', 'supplier'),
+            ('date', '>=', date_from),
+            ('date', '<=', date_to),
+            ('state', '=', 'posted'),
+        ]
+        for pay in self.env['account.payment'].search(vpay_domain):
+            rows.append({
+                'date': pay.date,
+                'create_date': pay.create_date,
+                'kind': 'vendor_payment',
+                'kind_label': _('Vendor Payment'),
+                'doc_name': pay.name,
+                'doc_id': pay.id,
+                'doc_model': 'account.payment',
+                'lines': [],
+                'note': _('Vendor Payment - %s', pay.journal_id.name) + (
+                    ' (%s)' % pay.ref if pay.ref else ''
+                ),
+                'debit': pay.amount,
+                'credit': 0.0,
+                'balance': 0.0,
+            })
+
         # Manual journal entries on partner's AR account (excludes auto-generated
         # invoice/payment moves which are move_type != 'entry'). Opening-balance
         # JEs (wizard ref or any move touching the Opening Balance Equity
