@@ -126,6 +126,14 @@
                                 </t>
                             </t>
                         </tbody>
+                        <tfoot>
+                            <tr class="entry-start">
+                                <td colspan="7" class="text-right"><strong>Totals</strong></td>
+                                <td class="text-right"><strong t-esc="'%.2f' % data['total_debit']"/></td>
+                                <td class="text-right"><strong t-esc="'%.2f' % data['total_credit']"/></td>
+                                <td class="text-right"><strong t-esc="'%.2f' % data['closing_balance']"/></td>
+                            </tr>
+                        </tfoot>
                     </table>
 
                     <div class="row" t-if="data['aging']">

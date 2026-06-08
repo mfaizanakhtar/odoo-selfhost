@@ -218,6 +218,8 @@ class ResPartner(models.Model):
             'credit': -opening if opening < 0 else 0.0,
             'balance': opening,
         }
+        total_debit = opening_row['debit'] + sum(r['debit'] for r in rows)
+        total_credit = opening_row['credit'] + sum(r['credit'] for r in rows)
 
         return {
             'partner': {
@@ -241,6 +243,8 @@ class ResPartner(models.Model):
             'opening_row': opening_row,
             'rows': rows,
             'closing_balance': closing,
+            'total_debit': total_debit,
+            'total_credit': total_credit,
             'aging': self._compute_aging_buckets(date_to) if show_aging else [],
             'currency_symbol': self.env.company.currency_id.symbol or '',
         }
