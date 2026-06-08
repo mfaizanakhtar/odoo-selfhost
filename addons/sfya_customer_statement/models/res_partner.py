@@ -6,7 +6,7 @@ from odoo import api, models, _
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
-    def get_statement_data(self, date_from, date_to, include_drafts=False):
+    def get_statement_data(self, date_from, date_to, include_drafts=False, show_aging=False):
         """Return chronological statement rows + meta for QWeb/screen rendering.
 
         Display order: latest first. Running balance computed in chronological
@@ -187,7 +187,7 @@ class ResPartner(models.Model):
             'opening_row': opening_row,
             'rows': rows,
             'closing_balance': closing,
-            'aging': self._compute_aging_buckets(date_to),
+            'aging': self._compute_aging_buckets(date_to) if show_aging else [],
             'currency_symbol': self.env.company.currency_id.symbol or '',
         }
 
