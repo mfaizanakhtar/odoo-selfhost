@@ -25,6 +25,10 @@
                         table.stmt tbody tr.entry-start td {
                             border-top: 3px solid #6c757d !important;
                         }
+                        table.stmt tfoot td {
+                            border-top: 1px solid #6c757d !important;
+                            border-bottom: 1px solid #6c757d !important;
+                        }
                     </style>
                     <h2>Customer Statement</h2>
 
@@ -127,7 +131,7 @@
                             </t>
                         </tbody>
                         <tfoot>
-                            <tr class="entry-start">
+                            <tr>
                                 <td colspan="7" class="text-right"><strong>Totals</strong></td>
                                 <td class="text-right"><strong t-esc="'%.2f' % data['total_debit']"/></td>
                                 <td class="text-right"><strong t-esc="'%.2f' % data['total_credit']"/></td>
