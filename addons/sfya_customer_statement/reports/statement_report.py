@@ -20,6 +20,7 @@ class CustomerStatementReport(models.AbstractModel):
             wizard.date_from,
             wizard.date_to,
             include_drafts=wizard.include_drafts,
+            show_aging=wizard.show_aging,
         )
         return {
             'doc_ids': docids,
