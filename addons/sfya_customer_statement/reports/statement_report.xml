@@ -44,8 +44,8 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Voucher</th>
                                 <th>Type</th>
+                                <th>Voucher</th>
                                 <th>Descriptions</th>
                                 <th class="text-right">Qty</th>
                                 <th class="text-right">@</th>
@@ -58,8 +58,8 @@
                         <tbody>
                             <tr>
                                 <td t-esc="data['opening_row']['date_str']"/>
-                                <td t-esc="data['opening_row']['doc_name']"/>
                                 <td>Opening</td>
+                                <td t-esc="data['opening_row']['doc_name']"/>
                                 <td t-esc="data['opening_row']['note']"/>
                                 <td/>
                                 <td/>
@@ -77,8 +77,8 @@
                                 <t t-if="not row['lines']">
                                     <tr class="entry-start">
                                         <td t-esc="row['date_str']"/>
-                                        <td t-esc="row['doc_name']"/>
                                         <td t-esc="row['kind_label']"/>
+                                        <td t-esc="row['doc_name']"/>
                                         <td t-esc="row['note']"/>
                                         <td/>
                                         <td/>
@@ -98,8 +98,8 @@
                                         <tr t-att-class="'entry-start' if line_first else ''">
                                             <t t-if="line_first">
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['date_str']"/>
-                                                <td class="align-middle" t-att-rowspan="rspan" t-esc="row['doc_name']"/>
                                                 <td class="align-middle" t-att-rowspan="rspan" t-esc="row['kind_label']"/>
+                                                <td class="align-middle" t-att-rowspan="rspan" t-esc="row['doc_name']"/>
                                             </t>
                                             <td t-esc="line['name']"/>
                                             <td class="text-right" t-esc="'%g' % line['qty']"/>

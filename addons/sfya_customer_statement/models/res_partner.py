@@ -103,7 +103,7 @@ class ResPartner(models.Model):
                 'date': bill.invoice_date,
                 'create_date': bill.create_date,
                 'kind': 'vendor_bill' if sign > 0 else 'vendor_refund',
-                'kind_label': _('Vendor Bill') if sign > 0 else _('Vendor Refund'),
+                'kind_label': _('Purchase') if sign > 0 else _('Purchase Return'),
                 'doc_name': bill.name,
                 'doc_id': bill.id,
                 'doc_model': 'account.move',
