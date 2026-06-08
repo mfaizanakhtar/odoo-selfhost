@@ -83,6 +83,37 @@ class ResPartner(models.Model):
                 'balance': 0.0,
             })
 
+        # Vendor bills (partner sells to us — counts as AP)
+        bill_domain = [
+            ('partner_id', '=', self.id),
+            ('move_type', 'in', ['in_invoice', 'in_refund']),
+            ('invoice_date', '>=', date_from),
+            ('invoice_date', '<=', date_to),
+            ('state', '=', 'posted'),
+        ]
+        for bill in self.env['account.move'].search(bill_domain):
+            sign = 1 if bill.move_type == 'in_invoice' else -1
+            lines = [{
+                'name': (l.product_id.display_name or l.name or ''),
+                'qty': l.quantity,
+                'price_unit': l.price_unit,
+                'subtotal': l.price_total,
+            } for l in bill.invoice_line_ids if l.display_type not in ('line_section', 'line_note')]
+            rows.append({
+                'date': bill.invoice_date,
+                'create_date': bill.create_date,
+                'kind': 'vendor_bill' if sign > 0 else 'vendor_refund',
+                'kind_label': _('Vendor Bill') if sign > 0 else _('Vendor Refund'),
+                'doc_name': bill.name,
+                'doc_id': bill.id,
+                'doc_model': 'account.move',
+                'lines': lines,
+                'note': '',
+                'debit': bill.amount_total if sign < 0 else 0.0,
+                'credit': bill.amount_total if sign > 0 else 0.0,
+                'balance': 0.0,
+            })
+
         # Customer payments
         pay_domain = [
             ('partner_id', '=', self.id),
