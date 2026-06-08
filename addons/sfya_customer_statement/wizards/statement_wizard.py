@@ -21,6 +21,10 @@ class StatementWizard(models.TransientModel):
         string='Include draft POS orders',
         default=False,
     )
+    show_aging = fields.Boolean(
+        string='Show Aging',
+        default=False,
+    )
 
     @api.constrains('date_from', 'date_to')
     def _check_dates(self):
