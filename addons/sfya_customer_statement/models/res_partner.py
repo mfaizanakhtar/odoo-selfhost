@@ -9,8 +9,8 @@ class ResPartner(models.Model):
     def get_statement_data(self, date_from, date_to, include_drafts=False, show_aging=False):
         """Return chronological statement rows + meta for QWeb/screen rendering.
 
-        Display order: latest first. Running balance computed in chronological
-        (asc) order then rows are reversed so the newest sits at top.
+        Display order: oldest first. Opening row is pinned at top by template.
+        Running balance computed in chronological (asc) order, same as display.
         """
         self.ensure_one()
         rows = []
@@ -209,9 +209,6 @@ class ResPartner(models.Model):
             r['balance'] = running
             r['date_str'] = r['date'].strftime('%d-%m-%Y') if r['date'] else ''
         closing = running
-
-        # Reverse for display (latest first)
-        rows.reverse()
 
         opening_row = {
             'date_str': date_from.strftime('%d-%m-%Y'),
