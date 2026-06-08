@@ -28,11 +28,10 @@
                         table.stmt tfoot, table.stmt tfoot tr { border: 0 !important; }
                         table.stmt tfoot td {
                             border-top: 1px solid #6c757d !important;
-                            border-bottom: 1px solid #6c757d !important;
+                            border-bottom: 0 !important;
                             border-left: 0 !important;
                             border-right: 0 !important;
                         }
-                        table.stmt { margin-bottom: 0 !important; }
                     </style>
                     <h2>Customer Statement</h2>
 
