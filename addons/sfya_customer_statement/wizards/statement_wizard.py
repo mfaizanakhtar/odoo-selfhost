@@ -14,7 +14,7 @@ class StatementWizard(models.TransientModel):
     )
     date_from = fields.Date(
         required=True,
-        default=lambda self: fields.Date.today() - timedelta(days=365),
+        default=lambda self: fields.Date.today() - timedelta(days=180),
     )
     date_to = fields.Date(required=True, default=fields.Date.today)
     include_drafts = fields.Boolean(
