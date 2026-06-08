@@ -8,12 +8,19 @@
                         table.stmt td:nth-child(1), table.stmt th:nth-child(1),
                         table.stmt td:nth-child(2), table.stmt th:nth-child(2),
                         table.stmt td:nth-child(3), table.stmt th:nth-child(3),
+                        table.stmt th:nth-child(4),
+                        table.stmt th:nth-child(5),
+                        table.stmt th:nth-child(6),
                         table.stmt td:nth-child(7), table.stmt th:nth-child(7),
                         table.stmt td:nth-child(8), table.stmt th:nth-child(8),
                         table.stmt td:nth-child(9), table.stmt th:nth-child(9),
+                        table.stmt tbody tr td:nth-child(4):not(:last-child),
+                        table.stmt tbody tr td:nth-child(5),
+                        table.stmt tbody tr td:nth-child(6),
                         table.stmt tbody tr td:last-child:nth-child(4) {
                             border-right: 1px solid #dee2e6;
                         }
+                        table.stmt thead th { font-weight: bold; }
                         table.stmt tbody td { border-top: 0 !important; border-bottom: 0 !important; }
                         table.stmt tbody tr.entry-start td {
                             border-top: 3px solid #6c757d !important;
