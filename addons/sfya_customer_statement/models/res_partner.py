@@ -133,7 +133,7 @@ class ResPartner(models.Model):
                 'doc_model': 'account.payment',
                 'lines': [],
                 'note': _('Payment - %s', pay.journal_id.name) + (
-                    ' (%s)' % pay.ref if pay.ref else ''
+                    ' (%s)' % pay.memo if pay.memo else ''
                 ),
                 'debit': 0.0,
                 'credit': pay.amount,
@@ -159,7 +159,7 @@ class ResPartner(models.Model):
                 'doc_model': 'account.payment',
                 'lines': [],
                 'note': _('Vendor Payment - %s', pay.journal_id.name) + (
-                    ' (%s)' % pay.ref if pay.ref else ''
+                    ' (%s)' % pay.memo if pay.memo else ''
                 ),
                 'debit': pay.amount,
                 'credit': 0.0,
