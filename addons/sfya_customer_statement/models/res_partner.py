@@ -120,7 +120,7 @@ class ResPartner(models.Model):
             ('partner_type', '=', 'customer'),
             ('date', '>=', date_from),
             ('date', '<=', date_to),
-            ('state', '=', 'posted'),
+            ('state', 'in', ['paid', 'in_process']),
         ]
         for pay in self.env['account.payment'].search(pay_domain):
             rows.append({
@@ -146,7 +146,7 @@ class ResPartner(models.Model):
             ('partner_type', '=', 'supplier'),
             ('date', '>=', date_from),
             ('date', '<=', date_to),
-            ('state', '=', 'posted'),
+            ('state', 'in', ['paid', 'in_process']),
         ]
         for pay in self.env['account.payment'].search(vpay_domain):
             rows.append({
