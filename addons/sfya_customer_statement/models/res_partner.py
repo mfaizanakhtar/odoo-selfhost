@@ -169,7 +169,10 @@ class ResPartner(models.Model):
         # Manual journal entries on partner's AR account (excludes auto-generated
         # invoice/payment moves which are move_type != 'entry'). Opening-balance
         # JEs (wizard ref or any move touching the Opening Balance Equity
-        # account) are rolled into the opening figure instead.
+        # account) are rolled into the opening figure instead. POS session
+        # payment moves (move.pos_payment_ids set) are also excluded — those
+        # cash receipts are already represented in the POS Sale row's credit
+        # column, including them here would double-count.
         ar = self.property_account_receivable_id
         opening_eq = self.env.company.sfya_opening_balance_account_id
         opening_move_ids = self._get_opening_balance_move_ids(opening_eq)
@@ -182,6 +185,7 @@ class ResPartner(models.Model):
                 ('parent_state', '=', 'posted'),
                 ('move_id.move_type', '=', 'entry'),
                 ('move_id.ref', 'not like', 'OPENING-BAL-%'),
+                ('move_id.pos_payment_ids', '=', False),
             ]
             if opening_move_ids:
                 je_domain.append(('move_id', 'not in', list(opening_move_ids)))
