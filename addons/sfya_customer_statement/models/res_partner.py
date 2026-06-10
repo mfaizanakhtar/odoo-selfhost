@@ -127,7 +127,7 @@ class ResPartner(models.Model):
                 'date': pay.date,
                 'create_date': pay.create_date,
                 'kind': 'payment',
-                'kind_label': _('Payment'),
+                'kind_label': _('Payment Received'),
                 'doc_name': pay.name,
                 'doc_id': pay.id,
                 'doc_model': 'account.payment',
