@@ -34,6 +34,8 @@ class AccountPayment(models.Model):
         partner = self.env['res.partner'].sudo().browse(partner_id).exists()
         if not partner:
             raise UserError(_('Partner not found.'))
+        if payment_type == 'outbound' and not partner.supplier_rank:
+            raise UserError(_('Pay Out is only allowed for vendor partners.'))
         if amount <= 0:
             raise UserError(_('Amount must be greater than zero.'))
         partner_type = 'supplier' if payment_type == 'outbound' else 'customer'
