@@ -10,10 +10,9 @@
  *  - this.pos is available directly from usePos() in setup()
  *  - Expected cash is props.default_cash_details.amount (a prop, NOT a getter)
  *    getDifference() = parseFloat(counted) - props.default_cash_details.amount
- *  - Because props are read-only, the expected-cash math override is skipped.
- *    TODO (Task 9): Intercept the closing_popup props builder on the Python/JS side
- *    to add collects_total - payouts_total into default_cash_details.amount before
- *    the dialog is opened. That is the safe place to inject the adjusted expected value.
+ *  - Expected-cash adjustment (collects_total - payouts_total) is applied on the
+ *    Python side by overriding get_closing_control_data() in pos_session.py, so
+ *    props.default_cash_details.amount already includes the SFYA movements.
  */
 
 import { patch } from "@web/core/utils/patch";
@@ -48,9 +47,8 @@ patch(ClosePosPopup.prototype, {
     },
 
     /**
-     * Net adjustment for display purposes only.
-     * Expected cash math override is not applied here because
-     * props.default_cash_details.amount is read-only. See TODO above.
+     * Net adjustment for display purposes (informational label in template).
+     * The actual expected-cash amount is already corrected by the Python override.
      */
     get sfyaExpectedAdjustment() {
         return (this.sfya.collects_total || 0) - (this.sfya.payouts_total || 0);
