@@ -5,7 +5,7 @@ import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { makeAwaitable } from "@point_of_sale/app/store/make_awaitable_dialog";
-import { PartnerListScreen } from "@point_of_sale/app/screens/partner_list/partner_list";
+import { PartnerList } from "@point_of_sale/app/screens/partner_list/partner_list";
 
 export class CashMovementModal extends Component {
     static template = "sfya_pos_cash_movement.CashMovementModal";
@@ -46,9 +46,11 @@ export class CashMovementModal extends Component {
     }
 
     async pickPartner() {
-        const partner = await makeAwaitable(this.pos.dialog, PartnerListScreen, {
-            partner: this.state.partner,
-        });
+        const partner = await makeAwaitable(
+            this.pos.dialog,
+            PartnerList,
+            this.state.partner ? { partner: this.state.partner } : {},
+        );
         if (!partner) return;
         if (this.props.mode === "payout" && !partner.supplier_rank) {
             this.state.error = _t("Pay Out is only allowed for vendors.");
