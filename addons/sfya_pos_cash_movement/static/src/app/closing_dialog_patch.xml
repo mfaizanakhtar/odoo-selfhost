@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <!--
+        Inherits point_of_sale.ClosePosPopup (the Odoo 18 closing popup template).
+        XPath anchor: the <hr/> element that sits between the payment-methods-overview
+        div and the Cash Count input area. This is the single <hr/> in the template
+        and is a stable anchor in Odoo 18's closing_popup.xml.
+        We inject SFYA Customer Receipts / Vendor Pay-outs sections after it.
+    -->
+    <t t-name="sfya_pos_cash_movement.ClosePosPopup"
+       t-inherit="point_of_sale.ClosePosPopup"
+       t-inherit-mode="extension">
+        <xpath expr="//hr" position="after">
+            <div t-if="sfya.loaded" class="sfya-cash-movements mb-3">
+
+                <!-- Customer Receipts section -->
+                <div class="sfya-section border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center"
+                         style="cursor: pointer;"
+                         t-on-click="() => sfya.collectsOpen = !sfya.collectsOpen">
+                        <strong>
+                            <i t-att-class="sfya.collectsOpen ? 'fa fa-caret-down me-1' : 'fa fa-caret-right me-1'"/>
+                            Customer Receipts
+                        </strong>
+                        <span class="text-success">
+                            + <t t-esc="sfya.collects_total.toFixed(2)"/>
+                        </span>
+                    </div>
+                    <table t-if="sfya.collectsOpen and sfya.collects.length" class="table table-sm mb-0 mt-2">
+                        <tbody>
+                            <tr t-foreach="sfya.collects" t-as="row" t-key="row.id">
+                                <td t-esc="row.partner_name"/>
+                                <td class="text-end" t-esc="row.amount.toFixed(2)"/>
+                                <td class="text-muted small" t-esc="row.memo"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div t-if="sfya.collectsOpen and !sfya.collects.length"
+                         class="text-muted small mt-1">
+                        No customer receipts this session.
+                    </div>
+                </div>
+
+                <!-- Vendor Pay-outs section -->
+                <div class="sfya-section border rounded p-2">
+                    <div class="d-flex justify-content-between align-items-center"
+                         style="cursor: pointer;"
+                         t-on-click="() => sfya.payoutsOpen = !sfya.payoutsOpen">
+                        <strong>
+                            <i t-att-class="sfya.payoutsOpen ? 'fa fa-caret-down me-1' : 'fa fa-caret-right me-1'"/>
+                            Vendor Pay-outs
+                        </strong>
+                        <span class="text-warning">
+                            - <t t-esc="sfya.payouts_total.toFixed(2)"/>
+                        </span>
+                    </div>
+                    <table t-if="sfya.payoutsOpen and sfya.payouts.length" class="table table-sm mb-0 mt-2">
+                        <tbody>
+                            <tr t-foreach="sfya.payouts" t-as="row" t-key="row.id">
+                                <td t-esc="row.partner_name"/>
+                                <td class="text-end" t-esc="row.amount.toFixed(2)"/>
+                                <td class="text-muted small" t-esc="row.memo"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div t-if="sfya.payoutsOpen and !sfya.payouts.length"
+                         class="text-muted small mt-1">
+                        No vendor pay-outs this session.
+                    </div>
+                </div>
+
+            </div>
+        </xpath>
+    </t>
+</templates>
