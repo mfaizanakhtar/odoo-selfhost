@@ -48,7 +48,9 @@ What is **NOT** in git (must be backed up separately):
 │    ├── Caddyfile           (HTTPS reverse proxy)         │
 │    ├── config/odoo.conf    (rendered from template)      │
 │    ├── addons/             (rsync'd from repo)           │
-│    │   ├── sfya_pos_receipt/   (custom POS receipt)      │
+│    │   ├── sfya_pos_receipt/        (custom POS receipt) │
+│    │   ├── sfya_customer_statement/ (per-customer report)│
+│    │   ├── sfya_pos_cash_movement/  (POS collect/payout) │
 │    │   └── oca/                (vendored OCA modules)    │
 │    └── .env                (DB creds, subdomain)         │
 │                                                          │
@@ -81,8 +83,10 @@ odoo-selfhost/
 ├── config/
 │   └── odoo.conf.template  ← addons_path, workers, memory limits (envsubst at deploy)
 ├── addons/
-│   ├── sfya_pos_receipt/   ← custom POS receipt (OWL inherit + JS patch)
-│   └── oca/                ← vendored 3rd-party (AGPL-3, OCA)
+│   ├── sfya_pos_receipt/         ← custom POS receipt (OWL inherit + JS patch)
+│   ├── sfya_customer_statement/  ← per-customer statement report + opening-balance wizard
+│   ├── sfya_pos_cash_movement/   ← POS Collect / Pay Out buttons (account.payment + pos.session)
+│   └── oca/                      ← vendored 3rd-party (AGPL-3, OCA)
 │       ├── account_financial_report/   Trial Balance, GL, Aged, VAT, ...
 │       ├── mis_builder/                MIS engine
 │       ├── mis_template_financial_report/  P&L + Balance Sheet templates
@@ -157,6 +161,8 @@ USER odoo
 
 **Custom (this repo, `addons/`):**
 - `sfya_pos_receipt` — replaces POS receipt with SFYA branded layout (OWL `t-inherit` + JS `patch`)
+- `sfya_customer_statement` — per-customer statement (POS, invoices, payments, manual entries) with opening-balance wizard
+- `sfya_pos_cash_movement` — adds Collect Payment / Pay Out buttons to POS; posts `account.payment` records linked to the active `pos.session` for till reconciliation in the closing dialog
 
 **OCA vendored (this repo, `addons/oca/`):**
 - `account_financial_report` — Trial Balance, General Ledger, Aged Partner, Open Items, VAT, Journal Ledger
