@@ -91,7 +91,8 @@ class PosSession(models.Model):
     def get_closing_control_data(self):
         data = super().get_closing_control_data()
         movements = self.get_sfya_cash_movements()
-        adjustment = (movements['collects_total'] or 0.0) - (movements['payouts_total'] or 0.0)
+        cash = movements.get('cash') or {}
+        adjustment = (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0)
         if data.get('default_cash_details') and adjustment:
             data['default_cash_details']['amount'] = (
                 data['default_cash_details'].get('amount', 0.0) + adjustment
