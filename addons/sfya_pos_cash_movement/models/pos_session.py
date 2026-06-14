@@ -5,24 +5,30 @@ class PosSession(models.Model):
     _inherit = 'pos.session'
 
     def get_sfya_cash_movements(self):
-        """Return cash collected / paid out via POS Cash Movement during this session.
+        """Return SFYA POS-recorded cash + bank payments for this session.
 
         Returns:
             {
-                'collects':       [{id, name, partner_id, partner_name, amount, memo}, ...],
-                'collects_total': float,
-                'payouts':        [{...}, ...],
-                'payouts_total':  float,
+                'cash': {collects, collects_total, payouts, payouts_total},
+                'banks': [
+                    {journal_id, journal_name, collects, collects_total,
+                     payouts, payouts_total},
+                    ...
+                ],
             }
+
+        Banks list contains only journals that had at least one movement
+        this session, sorted by journal name.
         """
         self.ensure_one()
         payments = self.env['account.payment'].sudo().search([
             ('pos_session_id', '=', self.id),
             ('state', 'in', ['paid', 'in_process']),
+            ('journal_id.type', 'in', ['cash', 'bank']),
         ], order='create_date asc')
-        collects, payouts = [], []
-        for p in payments:
-            row = {
+
+        def _row(p):
+            return {
                 'id': p.id,
                 'name': p.name,
                 'partner_id': p.partner_id.id,
@@ -30,12 +36,38 @@ class PosSession(models.Model):
                 'amount': p.amount,
                 'memo': p.memo or '',
             }
-            (collects if p.payment_type == 'inbound' else payouts).append(row)
+
+        cash_collects, cash_payouts = [], []
+        bank_buckets = {}  # journal_id -> {journal_id, journal_name, collects, payouts}
+        for p in payments:
+            row = _row(p)
+            j = p.journal_id
+            if j.type == 'cash':
+                (cash_collects if p.payment_type == 'inbound' else cash_payouts).append(row)
+            else:  # bank
+                bucket = bank_buckets.setdefault(j.id, {
+                    'journal_id': j.id,
+                    'journal_name': j.name,
+                    'collects': [],
+                    'payouts': [],
+                })
+                (bucket['collects'] if p.payment_type == 'inbound' else bucket['payouts']).append(row)
+
+        banks = []
+        for jid in sorted(bank_buckets, key=lambda i: bank_buckets[i]['journal_name']):
+            b = bank_buckets[jid]
+            b['collects_total'] = sum(r['amount'] for r in b['collects'])
+            b['payouts_total'] = sum(r['amount'] for r in b['payouts'])
+            banks.append(b)
+
         return {
-            'collects': collects,
-            'collects_total': sum(r['amount'] for r in collects),
-            'payouts': payouts,
-            'payouts_total': sum(r['amount'] for r in payouts),
+            'cash': {
+                'collects': cash_collects,
+                'collects_total': sum(r['amount'] for r in cash_collects),
+                'payouts': cash_payouts,
+                'payouts_total': sum(r['amount'] for r in cash_payouts),
+            },
+            'banks': banks,
         }
 
     @api.model
