@@ -11,64 +11,96 @@
        t-inherit="point_of_sale.ClosePosPopup"
        t-inherit-mode="extension">
         <xpath expr="//hr" position="after">
-            <div t-if="sfya.loaded" class="sfya-cash-movements mb-3">
+            <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.banks.length)"
+                 class="o_sfya_cash_movements mt-2">
 
-                <!-- Customer Receipts section -->
-                <div class="sfya-section border rounded p-2 mb-2">
-                    <div class="d-flex justify-content-between align-items-center"
-                         style="cursor: pointer;"
-                         t-on-click="() => sfya.collectsOpen = !sfya.collectsOpen">
-                        <strong>
-                            <i t-att-class="sfya.collectsOpen ? 'fa fa-caret-down me-1' : 'fa fa-caret-right me-1'"/>
-                            Customer Receipts
-                        </strong>
+                <!-- Cash: collects -->
+                <div t-if="sfya.cash.collects.length" class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"
+                         t-on-click="() => sfya.cashCollectsOpen = !sfya.cashCollectsOpen">
+                        <span>
+                            <i class="fa" t-att-class="sfya.cashCollectsOpen ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                            Customer Receipts (Cash)
+                        </span>
                         <span class="text-success">
-                            + <t t-esc="sfya.collects_total.toFixed(2)"/>
+                            +<t t-esc="sfya.cash.collects_total.toFixed(2)"/>
                         </span>
                     </div>
-                    <table t-if="sfya.collectsOpen and sfya.collects.length" class="table table-sm mb-0 mt-2">
+                    <table t-if="sfya.cashCollectsOpen" class="table table-sm mb-0 mt-1">
                         <tbody>
-                            <tr t-foreach="sfya.collects" t-as="row" t-key="row.id">
-                                <td t-esc="row.partner_name"/>
-                                <td class="text-end" t-esc="row.amount.toFixed(2)"/>
-                                <td class="text-muted small" t-esc="row.memo"/>
-                            </tr>
+                            <t t-foreach="sfya.cash.collects" t-as="r" t-key="r.id">
+                                <tr>
+                                    <td t-esc="r.partner_name"/>
+                                    <td t-esc="r.memo"/>
+                                    <td class="text-end" t-esc="r.amount.toFixed(2)"/>
+                                </tr>
+                            </t>
                         </tbody>
                     </table>
-                    <div t-if="sfya.collectsOpen and !sfya.collects.length"
-                         class="text-muted small mt-1">
-                        No customer receipts this session.
-                    </div>
                 </div>
 
-                <!-- Vendor Pay-outs section -->
-                <div class="sfya-section border rounded p-2">
-                    <div class="d-flex justify-content-between align-items-center"
-                         style="cursor: pointer;"
-                         t-on-click="() => sfya.payoutsOpen = !sfya.payoutsOpen">
-                        <strong>
-                            <i t-att-class="sfya.payoutsOpen ? 'fa fa-caret-down me-1' : 'fa fa-caret-right me-1'"/>
-                            Vendor Pay-outs
-                        </strong>
+                <!-- Cash: payouts -->
+                <div t-if="sfya.cash.payouts.length" class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"
+                         t-on-click="() => sfya.cashPayoutsOpen = !sfya.cashPayoutsOpen">
+                        <span>
+                            <i class="fa" t-att-class="sfya.cashPayoutsOpen ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                            Vendor Pay-outs (Cash)
+                        </span>
                         <span class="text-warning">
-                            - <t t-esc="sfya.payouts_total.toFixed(2)"/>
+                            -<t t-esc="sfya.cash.payouts_total.toFixed(2)"/>
                         </span>
                     </div>
-                    <table t-if="sfya.payoutsOpen and sfya.payouts.length" class="table table-sm mb-0 mt-2">
+                    <table t-if="sfya.cashPayoutsOpen" class="table table-sm mb-0 mt-1">
                         <tbody>
-                            <tr t-foreach="sfya.payouts" t-as="row" t-key="row.id">
-                                <td t-esc="row.partner_name"/>
-                                <td class="text-end" t-esc="row.amount.toFixed(2)"/>
-                                <td class="text-muted small" t-esc="row.memo"/>
-                            </tr>
+                            <t t-foreach="sfya.cash.payouts" t-as="r" t-key="r.id">
+                                <tr>
+                                    <td t-esc="r.partner_name"/>
+                                    <td t-esc="r.memo"/>
+                                    <td class="text-end" t-esc="r.amount.toFixed(2)"/>
+                                </tr>
+                            </t>
                         </tbody>
                     </table>
-                    <div t-if="sfya.payoutsOpen and !sfya.payouts.length"
-                         class="text-muted small mt-1">
-                        No vendor pay-outs this session.
-                    </div>
                 </div>
 
+                <!-- Banks: one section per journal, informational only -->
+                <t t-foreach="sfya.banks" t-as="b" t-key="b.journal_id">
+                    <div class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"
+                             t-on-click="() => this.toggleSfyaBank(b.journal_id)">
+                            <span>
+                                <i class="fa" t-att-class="sfya.banksOpen[b.journal_id] ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                                <t t-esc="b.journal_name"/>
+                                <small class="text-muted ms-2">(informational, no till impact)</small>
+                            </span>
+                            <span>
+                                <span class="text-success me-2">+<t t-esc="b.collects_total.toFixed(2)"/></span>
+                                <span class="text-warning">-<t t-esc="b.payouts_total.toFixed(2)"/></span>
+                            </span>
+                        </div>
+                        <table t-if="sfya.banksOpen[b.journal_id]" class="table table-sm mb-0 mt-1">
+                            <tbody>
+                                <t t-foreach="b.collects" t-as="r" t-key="'c'+r.id">
+                                    <tr>
+                                        <td>+</td>
+                                        <td t-esc="r.partner_name"/>
+                                        <td t-esc="r.memo"/>
+                                        <td class="text-end" t-esc="r.amount.toFixed(2)"/>
+                                    </tr>
+                                </t>
+                                <t t-foreach="b.payouts" t-as="r" t-key="'p'+r.id">
+                                    <tr>
+                                        <td>−</td>
+                                        <td t-esc="r.partner_name"/>
+                                        <td t-esc="r.memo"/>
+                                        <td class="text-end" t-esc="r.amount.toFixed(2)"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
             </div>
         </xpath>
     </t>

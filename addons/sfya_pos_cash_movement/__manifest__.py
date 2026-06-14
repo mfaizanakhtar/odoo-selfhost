@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Cash Movement',
-    'version': '18.0.2.0.3',
+    'version': '18.0.2.0.4',
     'summary': 'Collect Payment / Pay Out buttons on POS, linked to pos.session for till reconciliation',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',

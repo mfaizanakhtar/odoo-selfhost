@@ -23,12 +23,16 @@ patch(ClosePosPopup.prototype, {
     setup() {
         super.setup();
         this.sfya = useState({
-            collects: [],
-            collects_total: 0,
-            payouts: [],
-            payouts_total: 0,
-            collectsOpen: true,
-            payoutsOpen: true,
+            cash: {
+                collects: [],
+                collects_total: 0,
+                payouts: [],
+                payouts_total: 0,
+            },
+            banks: [],
+            cashCollectsOpen: true,
+            cashPayoutsOpen: true,
+            banksOpen: {}, // journal_id -> boolean
             loaded: false,
         });
         onWillStart(async () => {
@@ -38,7 +42,14 @@ patch(ClosePosPopup.prototype, {
                     "get_sfya_cash_movements",
                     [[this.pos.session.id]],
                 );
-                Object.assign(this.sfya, data, { loaded: true });
+                if (data?.cash) {
+                    Object.assign(this.sfya.cash, data.cash);
+                }
+                this.sfya.banks = data?.banks || [];
+                for (const b of this.sfya.banks) {
+                    this.sfya.banksOpen[b.journal_id] = true;
+                }
+                this.sfya.loaded = true;
             } catch (e) {
                 console.warn("[SFYA] Failed to load cash movements:", e);
                 this.sfya.loaded = true;
@@ -46,11 +57,11 @@ patch(ClosePosPopup.prototype, {
         });
     },
 
-    /**
-     * Net adjustment for display purposes (informational label in template).
-     * The actual expected-cash amount is already corrected by the Python override.
-     */
-    get sfyaExpectedAdjustment() {
-        return (this.sfya.collects_total || 0) - (this.sfya.payouts_total || 0);
+    get sfyaCashAdjustment() {
+        return (this.sfya.cash.collects_total || 0) - (this.sfya.cash.payouts_total || 0);
+    },
+
+    toggleSfyaBank(journalId) {
+        this.sfya.banksOpen[journalId] = !this.sfya.banksOpen[journalId];
     },
 });
