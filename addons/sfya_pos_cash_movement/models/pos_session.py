@@ -38,7 +38,7 @@ class PosSession(models.Model):
             }
 
         cash_collects, cash_payouts = [], []
-        bank_buckets = {}  # journal_id -> {journal_id, journal_name, collects, payouts}
+        bank_buckets = {}
         for p in payments:
             row = _row(p)
             j = p.journal_id
@@ -54,8 +54,7 @@ class PosSession(models.Model):
                 (bucket['collects'] if p.payment_type == 'inbound' else bucket['payouts']).append(row)
 
         banks = []
-        for jid in sorted(bank_buckets, key=lambda i: bank_buckets[i]['journal_name']):
-            b = bank_buckets[jid]
+        for b in sorted(bank_buckets.values(), key=lambda b: b['journal_name']):
             b['collects_total'] = sum(r['amount'] for r in b['collects'])
             b['payouts_total'] = sum(r['amount'] for r in b['payouts'])
             banks.append(b)
