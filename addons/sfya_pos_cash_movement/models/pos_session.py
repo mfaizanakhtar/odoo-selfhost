@@ -42,9 +42,9 @@ class PosSession(models.Model):
     def get_sfya_allowed_journals(self, session_id):
         """Return cash + bank journals selectable from the Cash Movement modal.
 
-        Filters by session company. Cash journals are listed first (so the
-        default selection — first row — is the POS till), then banks sorted
-        by name.
+        Filters by session company. Cash journals are listed first, then
+        banks; both groups sorted by name. The frontend modal picks the
+        default selection.
         """
         session = self.sudo().browse(session_id).exists()
         if not session:

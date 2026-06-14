@@ -45,7 +45,7 @@ class AccountPayment(models.Model):
             raise UserError(_('Account not found.'))
         if journal.type not in ('cash', 'bank'):
             raise UserError(_('Selected account is not a cash or bank journal.'))
-        if journal.company_id != session.company_id:
+        if journal.company_id.id != session.company_id.id:
             raise UserError(_("Account does not belong to this POS's company."))
         partner_type = 'supplier' if payment_type == 'outbound' else 'customer'
         payment = self.sudo().create({
