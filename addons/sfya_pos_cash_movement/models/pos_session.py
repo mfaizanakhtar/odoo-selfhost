@@ -1,4 +1,4 @@
-from odoo import models
+from odoo import api, models
 
 
 class PosSession(models.Model):
@@ -37,6 +37,25 @@ class PosSession(models.Model):
             'payouts': payouts,
             'payouts_total': sum(r['amount'] for r in payouts),
         }
+
+    @api.model
+    def get_sfya_allowed_journals(self, session_id):
+        """Return cash + bank journals selectable from the Cash Movement modal.
+
+        Filters by session company. Cash journals are listed first (so the
+        default selection — first row — is the POS till), then banks sorted
+        by name.
+        """
+        session = self.sudo().browse(session_id).exists()
+        if not session:
+            return []
+        journals = self.env['account.journal'].sudo().search([
+            ('type', 'in', ['cash', 'bank']),
+            ('company_id', '=', session.company_id.id),
+        ])
+        cash = journals.filtered(lambda j: j.type == 'cash').sorted('name')
+        banks = journals.filtered(lambda j: j.type == 'bank').sorted('name')
+        return [{'id': j.id, 'name': j.name, 'type': j.type} for j in (cash + banks)]
 
     def get_closing_control_data(self):
         data = super().get_closing_control_data()

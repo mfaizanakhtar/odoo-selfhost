@@ -14,20 +14,20 @@ class AccountPayment(models.Model):
     )
 
     @api.model
-    def sfya_pos_collect(self, session_id, partner_id, amount, memo=''):
-        """RPC: cashier collects cash from a customer or vendor."""
+    def sfya_pos_collect(self, session_id, partner_id, amount, journal_id, memo=''):
+        """RPC: cashier collects cash/bank payment from a customer or vendor."""
         return self._sfya_pos_create_payment(
-            session_id, partner_id, amount, memo, payment_type='inbound',
+            session_id, partner_id, amount, journal_id, memo, payment_type='inbound',
         )
 
     @api.model
-    def sfya_pos_payout(self, session_id, partner_id, amount, memo=''):
-        """RPC: cashier pays cash out to a vendor."""
+    def sfya_pos_payout(self, session_id, partner_id, amount, journal_id, memo=''):
+        """RPC: cashier pays out cash/bank to a vendor."""
         return self._sfya_pos_create_payment(
-            session_id, partner_id, amount, memo, payment_type='outbound',
+            session_id, partner_id, amount, journal_id, memo, payment_type='outbound',
         )
 
-    def _sfya_pos_create_payment(self, session_id, partner_id, amount, memo, payment_type):
+    def _sfya_pos_create_payment(self, session_id, partner_id, amount, journal_id, memo, payment_type):
         session = self.env['pos.session'].sudo().browse(session_id).exists()
         if not session or session.state != 'opened':
             raise UserError(_('POS session not found or not open.'))
@@ -38,18 +38,22 @@ class AccountPayment(models.Model):
             raise UserError(_('Pay Out is only allowed for vendor partners.'))
         if amount <= 0:
             raise UserError(_('Amount must be greater than zero.'))
+        if not journal_id:
+            raise UserError(_('Account is required.'))
+        journal = self.env['account.journal'].sudo().browse(journal_id).exists()
+        if not journal:
+            raise UserError(_('Account not found.'))
+        if journal.type not in ('cash', 'bank'):
+            raise UserError(_('Selected account is not a cash or bank journal.'))
+        if journal.company_id != session.company_id:
+            raise UserError(_("Account does not belong to this POS's company."))
         partner_type = 'supplier' if payment_type == 'outbound' else 'customer'
-        cash_pm = session.config_id.payment_method_ids.filtered(
-            lambda m: m.type == 'cash'
-        )[:1]
-        if not cash_pm or not cash_pm.journal_id:
-            raise UserError(_('No cash journal configured on this POS.'))
         payment = self.sudo().create({
             'partner_id': partner.id,
             'partner_type': partner_type,
             'payment_type': payment_type,
             'amount': amount,
-            'journal_id': cash_pm.journal_id.id,
+            'journal_id': journal.id,
             'date': fields.Date.today(),
             'memo': memo or False,
             'pos_session_id': session.id,
@@ -63,4 +67,7 @@ class AccountPayment(models.Model):
             'amount': payment.amount,
             'memo': payment.memo or '',
             'direction': payment_type,
+            'journal_id': journal.id,
+            'journal_name': journal.name,
+            'journal_type': journal.type,
         }
