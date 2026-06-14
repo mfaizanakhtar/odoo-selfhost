@@ -5,6 +5,18 @@
         <Dialog title="title" size="'md'">
             <div class="o_cash_movement_modal d-flex flex-column gap-3">
                 <div>
+                    <label class="form-label fw-bold">Account</label>
+                    <select class="form-select" t-model.number="state.journal_id"
+                            t-att-disabled="state.submitting or !state.journals.length">
+                        <t t-foreach="state.journals" t-as="j" t-key="j.id">
+                            <option t-att-value="j.id">
+                                <t t-esc="j.name"/>
+                                <t t-if="j.type === 'bank'"> (Bank)</t>
+                            </option>
+                        </t>
+                    </select>
+                </div>
+                <div>
                     <label class="form-label fw-bold">Partner</label>
                     <div class="d-flex align-items-center gap-2">
                         <button class="btn btn-outline-secondary" t-on-click="pickPartner">

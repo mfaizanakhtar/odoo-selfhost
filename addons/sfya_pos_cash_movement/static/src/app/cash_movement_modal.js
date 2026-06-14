@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState } from "@odoo/owl";
+import { Component, useState, onWillStart } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
@@ -20,11 +20,31 @@ export class CashMovementModal extends Component {
         this.notification = useService("notification");
         this.state = useState({
             partner: null,
+            journal_id: null,
+            journals: [],
             amount: "",
             memo: "",
             print: false,
             submitting: false,
             error: "",
+        });
+        onWillStart(async () => {
+            try {
+                const journals = await this.pos.data.call(
+                    "pos.session",
+                    "get_sfya_allowed_journals",
+                    [],
+                    { session_id: this.pos.session.id },
+                );
+                this.state.journals = journals || [];
+                if (this.state.journals.length > 0) {
+                    this.state.journal_id = this.state.journals[0].id;
+                } else {
+                    this.state.error = _t("No cash or bank journal configured for this company.");
+                }
+            } catch (e) {
+                this.state.error = e?.data?.message || e?.message || _t("Failed to load accounts.");
+            }
         });
     }
 
@@ -42,7 +62,12 @@ export class CashMovementModal extends Component {
 
     get isValid() {
         const amt = parseFloat(this.state.amount);
-        return !!this.state.partner && Number.isFinite(amt) && amt > 0 && !this.state.submitting;
+        return (
+            !!this.state.partner &&
+            !!this.state.journal_id &&
+            Number.isFinite(amt) && amt > 0 &&
+            !this.state.submitting
+        );
     }
 
     async pickPartner() {
@@ -74,6 +99,7 @@ export class CashMovementModal extends Component {
                     session_id: this.pos.session.id,
                     partner_id: this.state.partner.id,
                     amount: parseFloat(this.state.amount),
+                    journal_id: this.state.journal_id,
                     memo: this.state.memo || "",
                 },
             );
