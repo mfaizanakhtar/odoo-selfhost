@@ -162,7 +162,7 @@ USER odoo
 **Custom (this repo, `addons/`):**
 - `sfya_pos_receipt` — replaces POS receipt with SFYA branded layout (OWL `t-inherit` + JS `patch`)
 - `sfya_customer_statement` — per-customer statement (POS, invoices, payments, manual entries) with opening-balance wizard
-- `sfya_pos_cash_movement` — adds Collect Payment / Pay Out buttons to POS; posts `account.payment` records linked to the active `pos.session` for till reconciliation in the closing dialog
+- `sfya_pos_cash_movement` — adds Collect Payment / Pay Out buttons to POS; records `account.payment` against any cash or bank journal of the company (cashier picks via Account dropdown), linked to the active `pos.session` for till reconciliation. Cash movements adjust expected cash in the closing dialog; bank movements appear as informational per-journal sections with no till impact.
 
 **OCA vendored (this repo, `addons/oca/`):**
 - `account_financial_report` — Trial Balance, General Ledger, Aged Partner, Open Items, VAT, Journal Ledger
