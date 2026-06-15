@@ -16,6 +16,12 @@
                         </t>
                     </select>
                 </div>
+                <div t-if="selectedJournalIsBank">
+                    <label class="form-label fw-bold">Date</label>
+                    <input type="date" class="form-control"
+                           t-model="state.date" t-att-max="todayStr"/>
+                    <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
+                </div>
                 <div>
                     <label class="form-label fw-bold">Partner</label>
                     <div class="d-flex align-items-center gap-2">

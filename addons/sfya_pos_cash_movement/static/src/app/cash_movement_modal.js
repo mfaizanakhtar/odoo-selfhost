@@ -24,6 +24,7 @@ export class CashMovementModal extends Component {
             journals: [],
             amount: "",
             memo: "",
+            date: this._todayStr(),
             print: false,
             submitting: false,
             error: "",
@@ -70,6 +71,22 @@ export class CashMovementModal extends Component {
         );
     }
 
+    get selectedJournalIsBank() {
+        const j = this.state.journals.find((x) => x.id === this.state.journal_id);
+        return j?.type === "bank";
+    }
+
+    get todayStr() {
+        return this._todayStr();
+    }
+
+    _todayStr() {
+        const d = new Date();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${d.getFullYear()}-${m}-${day}`;
+    }
+
     async pickPartner() {
         const partner = await makeAwaitable(
             this.pos.dialog,
@@ -91,17 +108,21 @@ export class CashMovementModal extends Component {
         this.state.error = "";
         const rpcName = this.props.mode === "collect" ? "sfya_pos_collect" : "sfya_pos_payout";
         try {
+            const kwargs = {
+                session_id: this.pos.session.id,
+                partner_id: this.state.partner.id,
+                amount: parseFloat(this.state.amount),
+                journal_id: this.state.journal_id,
+                memo: this.state.memo || "",
+            };
+            if (this.selectedJournalIsBank) {
+                kwargs.date = this.state.date;
+            }
             const result = await this.pos.data.call(
                 "account.payment",
                 rpcName,
                 [],
-                {
-                    session_id: this.pos.session.id,
-                    partner_id: this.state.partner.id,
-                    amount: parseFloat(this.state.amount),
-                    journal_id: this.state.journal_id,
-                    memo: this.state.memo || "",
-                },
+                kwargs,
             );
             this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
             this.pos.sfyaCashMovements.push(result);
