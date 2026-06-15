@@ -14,20 +14,20 @@ class AccountPayment(models.Model):
     )
 
     @api.model
-    def sfya_pos_collect(self, session_id, partner_id, amount, journal_id, memo=''):
+    def sfya_pos_collect(self, session_id, partner_id, amount, journal_id, memo='', date=None):
         """RPC: cashier collects cash/bank payment from a customer or vendor."""
         return self._sfya_pos_create_payment(
-            session_id, partner_id, amount, journal_id, memo, payment_type='inbound',
+            session_id, partner_id, amount, journal_id, memo, payment_type='inbound', date=date,
         )
 
     @api.model
-    def sfya_pos_payout(self, session_id, partner_id, amount, journal_id, memo=''):
+    def sfya_pos_payout(self, session_id, partner_id, amount, journal_id, memo='', date=None):
         """RPC: cashier pays out cash/bank to a vendor."""
         return self._sfya_pos_create_payment(
-            session_id, partner_id, amount, journal_id, memo, payment_type='outbound',
+            session_id, partner_id, amount, journal_id, memo, payment_type='outbound', date=date,
         )
 
-    def _sfya_pos_create_payment(self, session_id, partner_id, amount, journal_id, memo, payment_type):
+    def _sfya_pos_create_payment(self, session_id, partner_id, amount, journal_id, memo, payment_type, date=None):
         session = self.env['pos.session'].sudo().browse(session_id).exists()
         if not session or session.state != 'opened':
             raise UserError(_('POS session not found or not open.'))
@@ -47,6 +47,15 @@ class AccountPayment(models.Model):
             raise UserError(_('Selected account is not a cash or bank journal.'))
         if journal.company_id.id != session.company_id.id:
             raise UserError(_("Account does not belong to this POS's company."))
+        resolved_date = fields.Date.today()
+        if journal.type == 'bank' and date:
+            try:
+                resolved_date = fields.Date.from_string(date)
+            except (ValueError, TypeError):
+                raise UserError(_("Invalid date format."))
+            if resolved_date > fields.Date.today():
+                raise UserError(_("Date cannot be in the future."))
+        # cash journal: ignore passed date; resolved_date stays today
         partner_type = 'supplier' if payment_type == 'outbound' else 'customer'
         payment = self.sudo().create({
             'partner_id': partner.id,
@@ -54,7 +63,7 @@ class AccountPayment(models.Model):
             'payment_type': payment_type,
             'amount': amount,
             'journal_id': journal.id,
-            'date': fields.Date.today(),
+            'date': resolved_date,
             'memo': memo or False,
             'pos_session_id': session.id,
         })
