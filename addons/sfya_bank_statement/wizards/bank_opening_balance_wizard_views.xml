@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_sfya_bank_opening_balance_wizard_form" model="ir.ui.view">
+        <field name="name">sfya.bank.opening.balance.wizard.form</field>
+        <field name="model">sfya.bank.opening.balance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Set Bank/Cash Opening Balance">
+                <sheet>
+                    <group>
+                        <field name="journal_id"/>
+                        <field name="amount"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="date"/>
+                        <field name="description"/>
+                        <field name="opening_journal_id"/>
+                        <field name="is_admin" invisible="1"/>
+                        <field name="force" invisible="not is_admin"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_create_move" type="object"
+                            string="Create Opening Balance" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sfya_bank_opening_balance_wizard" model="ir.actions.act_window">
+        <field name="name">Set Opening Balance</field>
+        <field name="res_model">sfya.bank.opening.balance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

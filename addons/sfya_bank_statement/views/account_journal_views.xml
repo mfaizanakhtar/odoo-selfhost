@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_account_journal_form_sfya_bank" model="ir.ui.view">
+        <field name="name">account.journal.form.sfya.bank.statement</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <div class="oe_button_box" name="sfya_bank_buttons"
+                     invisible="type not in ['bank', 'cash']">
+                    <button name="%(sfya_bank_statement.action_sfya_bank_opening_balance_wizard)d"
+                            type="action" class="oe_stat_button" icon="fa-bank"
+                            context="{'active_id': id, 'active_model': 'account.journal'}">
+                        <span>Set Opening Balance</span>
+                    </button>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
