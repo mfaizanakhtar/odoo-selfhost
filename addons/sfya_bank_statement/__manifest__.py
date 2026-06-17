@@ -1,0 +1,20 @@
+{
+    'name': 'SFYA Bank Statement',
+    'version': '18.0.1.0.0',
+    'summary': 'Opening balance wizard + per-journal statement PDF for bank/cash journals',
+    'category': 'Accounting',
+    'author': 'SFYA Enterprises',
+    'license': 'LGPL-3',
+    'depends': ['account', 'sfya_customer_statement'],
+    'data': [
+        'security/ir.model.access.csv',
+        'wizards/bank_opening_balance_wizard_views.xml',
+        'wizards/bank_statement_wizard_views.xml',
+        'reports/bank_statement_report_action.xml',
+        'reports/bank_statement_report.xml',
+        'views/account_journal_views.xml',
+    ],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}

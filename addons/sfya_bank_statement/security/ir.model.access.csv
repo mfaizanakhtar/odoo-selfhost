@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sfya_bank_opening_balance_wizard,sfya.bank.opening.balance.wizard,model_sfya_bank_opening_balance_wizard,base.group_user,1,1,1,1
+access_sfya_bank_statement_wizard,sfya.bank.statement.wizard,model_sfya_bank_statement_wizard,base.group_user,1,1,1,1
