@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <menuitem id="menu_finance_journals_top"
+              name="Journals"
+              parent="account.menu_finance"
+              action="account.action_account_journal_form"
+              sequence="1"/>
+</odoo>
