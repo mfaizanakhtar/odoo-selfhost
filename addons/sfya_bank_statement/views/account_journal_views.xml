@@ -13,6 +13,11 @@
                             context="{'active_id': id, 'active_model': 'account.journal'}">
                         <span>Set Opening Balance</span>
                     </button>
+                    <button name="%(sfya_bank_statement.action_sfya_bank_statement_wizard)d"
+                            type="action" class="oe_stat_button" icon="fa-file-text-o"
+                            context="{'active_id': id, 'active_model': 'account.journal'}">
+                        <span>Print Statement</span>
+                    </button>
                 </div>
             </xpath>
         </field>

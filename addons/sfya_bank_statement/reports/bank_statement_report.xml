@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_bank_statement">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="w">
+                <t t-call="web.external_layout">
+                    <div class="page o_sfya_statement">
+                        <h2>
+                            <span>Bank Statement — </span>
+                            <span t-esc="w.journal_id.name"/>
+                        </h2>
+                        <div>
+                            <strong>Period: </strong>
+                            <span t-esc="w.date_from"/> → <span t-esc="w.date_to"/>
+                        </div>
+                        <div>
+                            <strong>Account: </strong>
+                            <span t-esc="w.journal_id.default_account_id.code"/>
+                            <span> </span>
+                            <span t-esc="w.journal_id.default_account_id.name"/>
+                        </div>
+                        <table class="table table-sm mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Ref</th>
+                                    <th>Partner</th>
+                                    <th>Label</th>
+                                    <th class="text-end">Debit</th>
+                                    <th class="text-end">Credit</th>
+                                    <th class="text-end">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="opening-row">
+                                    <td colspan="6"><strong>Opening Balance</strong></td>
+                                    <td class="text-end">
+                                        <strong t-esc="opening_by_wizard[w.id]"
+                                                t-options="{'widget': 'monetary', 'display_currency': company.currency_id}"/>
+                                    </td>
+                                </tr>
+                                <tr t-foreach="lines_by_wizard[w.id]" t-as="l">
+                                    <td><span t-esc="l['date']"/></td>
+                                    <td><span t-esc="l['ref']"/></td>
+                                    <td><span t-esc="l['partner_name']"/></td>
+                                    <td><span t-esc="l['label']"/></td>
+                                    <td class="text-end">
+                                        <span t-esc="l['debit']"
+                                              t-options="{'widget': 'monetary', 'display_currency': company.currency_id}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-esc="l['credit']"
+                                              t-options="{'widget': 'monetary', 'display_currency': company.currency_id}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-esc="l['running_balance']"
+                                              t-options="{'widget': 'monetary', 'display_currency': company.currency_id}"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="closing-row">
+                                    <td colspan="6"><strong>Closing Balance</strong></td>
+                                    <td class="text-end">
+                                        <strong t-esc="closing_by_wizard[w.id]"
+                                                t-options="{'widget': 'monetary', 'display_currency': company.currency_id}"/>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

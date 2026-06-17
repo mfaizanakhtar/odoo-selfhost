@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_sfya_bank_statement_wizard_form" model="ir.ui.view">
+        <field name="name">sfya.bank.statement.wizard.form</field>
+        <field name="model">sfya.bank.statement.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Print Bank/Cash Statement">
+                <sheet>
+                    <group>
+                        <field name="journal_id"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_print_pdf" type="object"
+                            string="Print PDF" class="btn-primary"/>
+                    <button name="action_view_html" type="object"
+                            string="View HTML" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sfya_bank_statement_wizard" model="ir.actions.act_window">
+        <field name="name">Print Statement</field>
+        <field name="res_model">sfya.bank.statement.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

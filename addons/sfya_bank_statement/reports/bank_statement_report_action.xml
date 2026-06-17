@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_report_bank_statement" model="ir.actions.report">
+        <field name="name">Bank Statement</field>
+        <field name="model">sfya.bank.statement.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sfya_bank_statement.report_bank_statement</field>
+        <field name="report_file">sfya_bank_statement.report_bank_statement</field>
+        <field name="binding_model_id" eval="False"/>
+        <field name="print_report_name">'Bank Statement - %s' % (object.journal_id.name or '')</field>
+    </record>
+</odoo>
