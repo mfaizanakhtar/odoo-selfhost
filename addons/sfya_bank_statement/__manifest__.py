@@ -1,6 +1,6 @@
 {
     'name': 'SFYA Bank Statement',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'summary': 'Opening balance wizard + per-journal statement PDF for bank/cash journals',
     'category': 'Accounting',
     'author': 'SFYA Enterprises',
