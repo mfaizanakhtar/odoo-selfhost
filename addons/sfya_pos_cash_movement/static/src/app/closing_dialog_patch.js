@@ -34,6 +34,7 @@ patch(ClosePosPopup.prototype, {
             cashPayoutsOpen: true,
             banksOpen: {}, // journal_id -> boolean
             loaded: false,
+            closeError: null,
         });
         onWillStart(async () => {
             try {
@@ -64,4 +65,31 @@ patch(ClosePosPopup.prototype, {
     toggleSfyaBank(journalId) {
         this.sfya.banksOpen[journalId] = !this.sfya.banksOpen[journalId];
     },
+
+    async closeSession() {
+        try {
+            const cashId = this.props.default_cash_details?.id;
+            const counted = parseFloat(
+                cashId != null ? (this.state.payments[cashId]?.counted || 0) : 0
+            );
+            const expected = this.props.default_cash_details?.amount || 0;
+            const maxDiff = this.pos.config.sfya_max_cash_difference ?? 500;
+
+            if (counted === 0) {
+                this.sfya.closeError = "Please enter actual cash count before closing.";
+                return;
+            }
+            const diff = Math.abs(counted - expected);
+            if (maxDiff > 0 && diff > maxDiff) {
+                this.sfya.closeError = `Cash difference of Rs ${diff.toFixed(0)} exceeds allowed limit of Rs ${maxDiff.toFixed(0)}. Please recount or adjust.`;
+                return;
+            }
+            this.sfya.closeError = null;
+        } catch (e) {
+            // Defensive: never block close on internal guard failure.
+            console.warn("[SFYA] close validation failed, falling through:", e);
+            this.sfya.closeError = null;
+        }
+        return super.closeSession(...arguments);
+    }
 });

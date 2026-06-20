@@ -14,6 +14,8 @@
             <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.banks.length)"
                  class="o_sfya_cash_movements mt-2">
 
+                <div t-if="sfya.closeError" class="alert alert-danger mb-2" t-esc="sfya.closeError"/>
+
                 <!-- Cash: collects -->
                 <div t-if="sfya.cash.collects.length" class="border rounded p-2 mb-2">
                     <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"

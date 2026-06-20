@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Cash Movement',
-    'version': '18.0.3.0.1',
+    'version': '18.0.3.1.0',
     'summary': 'Collect Payment / Pay Out buttons on POS, linked to pos.session for till reconciliation',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
@@ -8,6 +8,7 @@
     'depends': ['point_of_sale', 'account'],
     'data': [
         'security/ir.model.access.csv',
+        'views/pos_config_views.xml',
     ],
     'assets': {
         'point_of_sale._assets_pos': [
