@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="sfya_pos_receipt.DiscountPopup">
+        <Dialog title="'Add Discount'" size="'md'">
+            <div class="o_sfya_discount_popup d-flex flex-column gap-3">
+                <div>
+                    <label class="form-label fw-bold">Order Total</label>
+                    <div class="form-control-plaintext" t-esc="orderTotal.toFixed(2)"/>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Mode</label>
+                    <div class="btn-group w-100">
+                        <button type="button" class="btn"
+                                t-att-class="state.mode === '%' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.setMode('%')">
+                            %
+                        </button>
+                        <button type="button" class="btn"
+                                t-att-class="state.mode === 'Rs' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.setMode('Rs')">
+                            Rs
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">
+                        <t t-if="state.mode === '%'">Discount (%)</t>
+                        <t t-else="">Discount Amount (Rs)</t>
+                    </label>
+                    <input type="number" class="form-control" step="0.01" min="0"
+                           t-model="state.value" placeholder="0"/>
+                    <small class="text-muted">Leave empty or 0 to remove discount from all lines.</small>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="() => props.close()">Cancel</button>
+                <button class="btn btn-primary" t-att-disabled="!isValid" t-on-click="confirm">Apply</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

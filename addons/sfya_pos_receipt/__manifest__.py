@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Receipt',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'summary': 'SFYA-branded receipt layout for Point of Sale',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
@@ -14,6 +14,10 @@
             'sfya_pos_receipt/static/src/scss/receipt.scss',
             'sfya_pos_receipt/static/src/app/ticket_screen_patch.js',
             'sfya_pos_receipt/static/src/app/ticket_screen.xml',
+            'sfya_pos_receipt/static/src/app/discount_popup.js',
+            'sfya_pos_receipt/static/src/app/discount_popup.xml',
+            'sfya_pos_receipt/static/src/app/discount_button.js',
+            'sfya_pos_receipt/static/src/app/discount_button.xml',
         ],
     },
     'installable': True,

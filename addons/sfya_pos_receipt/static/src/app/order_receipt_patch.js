@@ -68,6 +68,11 @@ patch(PosOrder.prototype, {
             0
         );
 
+        const totalDiscount = (this.lines || []).reduce(
+            (sum, l) => sum + ((l.qty || 0) * (l.price_unit || 0) * ((l.discount || 0) / 100)),
+            0
+        );
+
         return {
             ...data,
             orderlines: cleanedOrderlines,
@@ -75,6 +80,7 @@ patch(PosOrder.prototype, {
             dateOnly,
             timeOnly,
             totalQty,
+            total_discount: totalDiscount,
             paymentReceived,
             onCredit,
             prevDue,

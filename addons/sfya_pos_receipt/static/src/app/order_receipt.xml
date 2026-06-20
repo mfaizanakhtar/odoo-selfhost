@@ -65,6 +65,10 @@
                     <span>Subtotal</span>
                     <span t-esc="props.formatCurrency(props.data.total_without_tax)"/>
                 </div>
+                <div class="sfya-total-row" t-if="props.data.total_discount &gt; 0">
+                    <span>Discount</span>
+                    <span>-<t t-esc="props.formatCurrency(props.data.total_discount)"/></span>
+                </div>
                 <div class="sfya-total-row sfya-grand">
                     <span>Grand Total</span>
                     <span t-esc="props.formatCurrency(props.data.amount_total)"/>
