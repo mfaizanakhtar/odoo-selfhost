@@ -28,10 +28,13 @@ patch(ClosePosPopup.prototype, {
                 collects_total: 0,
                 payouts: [],
                 payouts_total: 0,
+                drawings: [],
+                drawings_total: 0,
             },
             banks: [],
             cashCollectsOpen: true,
             cashPayoutsOpen: true,
+            drawingsOpen: true,
             banksOpen: {}, // journal_id -> boolean
             loaded: false,
             closeError: null,

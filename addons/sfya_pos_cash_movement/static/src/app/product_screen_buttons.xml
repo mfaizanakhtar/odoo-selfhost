@@ -12,6 +12,11 @@
                 <i class="fa fa-arrow-up text-warning me-1"/>
                 Pay Out
             </button>
+            <button class="control-button btn btn-secondary btn-lg py-5 o_cash_movement_drawing"
+                    t-on-click="openDrawing">
+                <i class="fa fa-share-square text-info me-1"/>
+                Partner Drawing
+            </button>
         </xpath>
     </t>
 </templates>

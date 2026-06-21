@@ -11,4 +11,7 @@ patch(ControlButtons.prototype, {
     openPayout() {
         this.dialog.add(CashMovementModal, { mode: "payout" });
     },
+    openDrawing() {
+        this.dialog.add(CashMovementModal, { mode: "drawing" });
+    },
 });

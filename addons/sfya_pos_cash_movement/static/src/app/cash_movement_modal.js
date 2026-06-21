@@ -11,7 +11,7 @@ export class CashMovementModal extends Component {
     static template = "sfya_pos_cash_movement.CashMovementModal";
     static components = { Dialog };
     static props = {
-        mode: { type: String, validate: (v) => ["collect", "payout"].includes(v) },
+        mode: { type: String, validate: (v) => ["collect", "payout", "drawing"].includes(v) },
         close: Function,
     };
 
@@ -50,11 +50,15 @@ export class CashMovementModal extends Component {
     }
 
     get title() {
-        return this.props.mode === "collect" ? _t("Collect Payment") : _t("Pay Out");
+        if (this.props.mode === "collect") return _t("Collect Payment");
+        if (this.props.mode === "drawing") return _t("Partner Drawing");
+        return _t("Pay Out");
     }
 
     get confirmLabel() {
-        return this.props.mode === "collect" ? _t("Collect") : _t("Pay Out");
+        if (this.props.mode === "collect") return _t("Collect");
+        if (this.props.mode === "drawing") return _t("Record Drawing");
+        return _t("Pay Out");
     }
 
     get confirmClass() {
@@ -106,32 +110,66 @@ export class CashMovementModal extends Component {
         if (!this.isValid) return;
         this.state.submitting = true;
         this.state.error = "";
-        const rpcName = this.props.mode === "collect" ? "sfya_pos_collect" : "sfya_pos_payout";
+        const sessionId = this.pos.session.id;
+        const partnerId = this.state.partner.id;
+        const amount = parseFloat(this.state.amount);
+        const journalId = this.state.journal_id;
+        const memo = this.state.memo || "";
+        const dateVal = this.selectedJournalIsBank ? this.state.date : undefined;
         try {
-            const kwargs = {
-                session_id: this.pos.session.id,
-                partner_id: this.state.partner.id,
-                amount: parseFloat(this.state.amount),
-                journal_id: this.state.journal_id,
-                memo: this.state.memo || "",
-            };
-            if (this.selectedJournalIsBank) {
-                kwargs.date = this.state.date;
+            let result;
+            if (this.props.mode === "drawing") {
+                result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_partner_drawing",
+                    [sessionId, partnerId, amount, journalId, memo, dateVal],
+                );
+            } else if (this.props.mode === "collect") {
+                const kwargs = {
+                    session_id: sessionId,
+                    partner_id: partnerId,
+                    amount,
+                    journal_id: journalId,
+                    memo,
+                };
+                if (dateVal !== undefined) kwargs.date = dateVal;
+                result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_collect",
+                    [],
+                    kwargs,
+                );
+            } else {
+                const kwargs = {
+                    session_id: sessionId,
+                    partner_id: partnerId,
+                    amount,
+                    journal_id: journalId,
+                    memo,
+                };
+                if (dateVal !== undefined) kwargs.date = dateVal;
+                result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_payout",
+                    [],
+                    kwargs,
+                );
             }
-            const result = await this.pos.data.call(
-                "account.payment",
-                rpcName,
-                [],
-                kwargs,
-            );
             this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
             this.pos.sfyaCashMovements.push(result);
-            this.notification.add(
-                this.props.mode === "collect"
-                    ? _t("Collected %s from %s", result.amount, result.partner_name)
-                    : _t("Paid %s to %s", result.amount, result.partner_name),
-                { type: "success" },
-            );
+            if (this.props.mode === "drawing") {
+                this.notification.add(
+                    _t("Drawing of %s recorded for %s", result.amount, result.partner_name),
+                    { type: "success" },
+                );
+            } else {
+                this.notification.add(
+                    this.props.mode === "collect"
+                        ? _t("Collected %s from %s", result.amount, result.partner_name)
+                        : _t("Paid %s to %s", result.amount, result.partner_name),
+                    { type: "success" },
+                );
+            }
             if (this.state.print) {
                 await this._printSlip(result);
             }
