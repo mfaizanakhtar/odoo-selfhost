@@ -77,7 +77,7 @@ When user taps a balance row:
 2. Open `CashMovementModal` with `mode: "collect"`
 3. Pre-fill partner (pass partner object or minimal `{id, name}` so modal skips partner picker)
 
-This requires `CashMovementModal` to accept an optional `partner` prop. When provided, `state.partner` initializes to that value and the partner picker button shows the pre-filled name (user can still change it).
+This requires `CashMovementModal` to accept an optional `initialPartner` prop. When provided, `state.partner` initializes to that value and the partner picker button shows the pre-filled name (user can still change it).
 
 ## Files
 
