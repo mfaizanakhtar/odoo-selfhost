@@ -101,7 +101,7 @@ class AccountPayment(models.Model):
             ('date', '>=', d_from),
             ('date', '<=', d_to),
             ('company_id', '=', self.env.company.id),
-        ], order='date desc, id desc')
+        ], order='date desc, id desc', limit=500)
         return [{
             'id': p.id,
             'date': p.date.strftime('%d-%m-%Y'),

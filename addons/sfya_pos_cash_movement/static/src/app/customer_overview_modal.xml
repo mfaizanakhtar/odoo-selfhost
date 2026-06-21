@@ -20,14 +20,14 @@
                     </li>
                 </ul>
 
-                <!-- Error -->
-                <div t-if="state.error" class="alert alert-danger py-1 px-2 mb-2"
-                     t-esc="state.error"/>
-
                 <!-- Loading -->
                 <div t-if="state.loading" class="text-center py-4">
                     <i class="fa fa-spinner fa-spin fa-2x"/>
                 </div>
+
+                <!-- Error -->
+                <div t-elif="state.error" class="alert alert-danger py-1 px-2 mb-2"
+                     t-esc="state.error"/>
 
                 <!-- Balances Tab -->
                 <div t-elif="state.tab === 'balances'" class="flex-grow-1 overflow-auto">

@@ -76,6 +76,7 @@ export class CustomerOverviewModal extends Component {
     }
 
     collectFromPartner(row) {
+        if (!row.partner_id) return;
         this.props.close();
         this.pos.dialog.add(CashMovementModal, {
             mode: "collect",
