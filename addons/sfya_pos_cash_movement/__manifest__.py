@@ -23,4 +23,5 @@
     'installable': True,
     'application': False,
     'auto_install': False,
+    'post_init_hook': '_post_init_create_drawing_account',
 }
