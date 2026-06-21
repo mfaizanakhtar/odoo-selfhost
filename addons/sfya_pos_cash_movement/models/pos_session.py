@@ -37,26 +37,41 @@ class PosSession(models.Model):
                 'memo': p.memo or '',
             }
 
-        cash_collects, cash_payouts = [], []
+        drawing_account = self.company_id.sfya_owner_drawing_account_id
+
+        cash_collects, cash_payouts, cash_drawings = [], [], []
         bank_buckets = {}
         for p in payments:
             row = _row(p)
             j = p.journal_id
+            is_drawing = bool(drawing_account and p.destination_account_id == drawing_account)
             if j.type == 'cash':
-                (cash_collects if p.payment_type == 'inbound' else cash_payouts).append(row)
+                if p.payment_type == 'inbound':
+                    cash_collects.append(row)
+                elif is_drawing:
+                    cash_drawings.append(row)
+                else:
+                    cash_payouts.append(row)
             else:  # bank
                 bucket = bank_buckets.setdefault(j.id, {
                     'journal_id': j.id,
                     'journal_name': j.name,
                     'collects': [],
                     'payouts': [],
+                    'drawings': [],
                 })
-                (bucket['collects'] if p.payment_type == 'inbound' else bucket['payouts']).append(row)
+                if p.payment_type == 'inbound':
+                    bucket['collects'].append(row)
+                elif is_drawing:
+                    bucket['drawings'].append(row)
+                else:
+                    bucket['payouts'].append(row)
 
         banks = []
         for b in sorted(bank_buckets.values(), key=lambda b: b['journal_name']):
             b['collects_total'] = sum(r['amount'] for r in b['collects'])
             b['payouts_total'] = sum(r['amount'] for r in b['payouts'])
+            b['drawings_total'] = sum(r['amount'] for r in b['drawings'])
             banks.append(b)
 
         return {
@@ -65,6 +80,8 @@ class PosSession(models.Model):
                 'collects_total': sum(r['amount'] for r in cash_collects),
                 'payouts': cash_payouts,
                 'payouts_total': sum(r['amount'] for r in cash_payouts),
+                'drawings': cash_drawings,
+                'drawings_total': sum(r['amount'] for r in cash_drawings),
             },
             'banks': banks,
         }
@@ -92,7 +109,7 @@ class PosSession(models.Model):
         data = super().get_closing_control_data()
         movements = self.get_sfya_cash_movements()
         cash = movements.get('cash') or {}
-        adjustment = (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0)
+        adjustment = (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0) - (cash.get('drawings_total') or 0.0)
         if data.get('default_cash_details') and adjustment:
             data['default_cash_details']['amount'] = (
                 data['default_cash_details'].get('amount', 0.0) + adjustment
