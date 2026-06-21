@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="sfya_pos_cash_movement.CustomerOverviewModal">
+        <Dialog title="'Customer Overview'" size="'lg'">
+            <div class="o_customer_overview d-flex flex-column" style="min-height: 400px;">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a class="nav-link" t-att-class="{ active: state.tab === 'balances' }"
+                           href="#" t-on-click.prevent="() => this.setTab('balances')">
+                            Outstanding Balances
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" t-att-class="{ active: state.tab === 'collections' }"
+                           href="#" t-on-click.prevent="() => this.setTab('collections')">
+                            Recent Collections
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Error -->
+                <div t-if="state.error" class="alert alert-danger py-1 px-2 mb-2"
+                     t-esc="state.error"/>
+
+                <!-- Loading -->
+                <div t-if="state.loading" class="text-center py-4">
+                    <i class="fa fa-spinner fa-spin fa-2x"/>
+                </div>
+
+                <!-- Balances Tab -->
+                <div t-elif="state.tab === 'balances'" class="flex-grow-1 overflow-auto">
+                    <table t-if="state.balances.length" class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th class="text-end">Balance (PKR)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.balances" t-as="row" t-key="row.partner_id">
+                                <tr class="cursor-pointer" t-on-click="() => this.collectFromPartner(row)">
+                                    <td t-esc="row.partner_name"/>
+                                    <td class="text-end fw-bold"
+                                        t-att-class="{ 'text-danger': row.balance > 0, 'text-success': row.balance &lt; 0 }">
+                                        <t t-esc="row.balance.toLocaleString('en-PK', { minimumFractionDigits: 2 })"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                    <div t-else="" class="text-muted text-center py-4">
+                        No outstanding balances
+                    </div>
+                </div>
+
+                <!-- Collections Tab -->
+                <div t-elif="state.tab === 'collections'" class="flex-grow-1 d-flex flex-column">
+                    <!-- Date filters -->
+                    <div class="d-flex gap-2 mb-3 align-items-end">
+                        <div>
+                            <label class="form-label mb-0 small">From</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-model="state.dateFrom"/>
+                        </div>
+                        <div>
+                            <label class="form-label mb-0 small">To</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-model="state.dateTo"/>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" t-on-click="refreshCollections">
+                            <i class="fa fa-refresh"/> Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-auto flex-grow-1">
+                        <table t-if="state.collections.length" class="table table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th class="text-end">Amount (PKR)</th>
+                                    <th>Source</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.collections" t-as="c" t-key="c.id">
+                                    <tr>
+                                        <td t-esc="c.date"/>
+                                        <td t-esc="c.partner_name"/>
+                                        <td class="text-end" t-esc="c.amount.toLocaleString('en-PK', { minimumFractionDigits: 2 })"/>
+                                        <td>
+                                            <span class="badge"
+                                                  t-att-class="c.source === 'POS' ? 'bg-success' : 'bg-secondary'">
+                                                <t t-esc="c.source"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted text-center py-4">
+                            No collections in this period
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="() => props.close()">Close</button>
+            </t>
+        </Dialog>
+    </t>
+
+</templates>

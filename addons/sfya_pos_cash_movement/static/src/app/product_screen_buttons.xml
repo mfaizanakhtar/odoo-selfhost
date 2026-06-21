@@ -17,6 +17,11 @@
                 <i class="fa fa-share-square text-info me-1"/>
                 Partner Drawing
             </button>
+            <button class="control-button btn btn-secondary btn-lg py-5 o_customer_overview"
+                    t-on-click="openOverview">
+                <i class="fa fa-users text-primary me-1"/>
+                Customer Overview
+            </button>
         </xpath>
     </t>
 </templates>

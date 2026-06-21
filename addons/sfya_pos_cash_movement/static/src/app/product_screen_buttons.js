@@ -3,6 +3,7 @@
 import { patch } from "@web/core/utils/patch";
 import { ControlButtons } from "@point_of_sale/app/screens/product_screen/control_buttons/control_buttons";
 import { CashMovementModal } from "./cash_movement_modal";
+import { CustomerOverviewModal } from "./customer_overview_modal";
 
 patch(ControlButtons.prototype, {
     openCollect() {
@@ -13,5 +14,8 @@ patch(ControlButtons.prototype, {
     },
     openDrawing() {
         this.dialog.add(CashMovementModal, { mode: "drawing" });
+    },
+    openOverview() {
+        this.dialog.add(CustomerOverviewModal, {});
     },
 });
