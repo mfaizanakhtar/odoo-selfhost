@@ -86,6 +86,30 @@ class AccountPayment(models.Model):
             'journal_type': journal.type,
         }
 
+    @api.model
+    def get_recent_collections(self, date_from, date_to):
+        """Return inbound customer payments in date range for POS overview."""
+        try:
+            d_from = fields.Date.from_string(date_from)
+            d_to = fields.Date.from_string(date_to)
+        except (ValueError, TypeError):
+            raise UserError(_("Invalid date format."))
+        payments = self.sudo().search([
+            ('payment_type', '=', 'inbound'),
+            ('partner_type', '=', 'customer'),
+            ('state', 'in', ['posted', 'paid', 'in_process']),
+            ('date', '>=', d_from),
+            ('date', '<=', d_to),
+            ('company_id', '=', self.env.company.id),
+        ], order='date desc, id desc')
+        return [{
+            'id': p.id,
+            'date': p.date.strftime('%d-%m-%Y'),
+            'partner_name': p.partner_id.name,
+            'amount': p.amount,
+            'source': 'POS' if p.pos_session_id else 'Invoice/Manual',
+        } for p in payments]
+
     def _sfya_pos_create_payment(self, session_id, partner_id, amount, journal_id, memo, payment_type, date=None):
         session = self.env['pos.session'].sudo().browse(session_id).exists()
         if not session or session.state != 'opened':

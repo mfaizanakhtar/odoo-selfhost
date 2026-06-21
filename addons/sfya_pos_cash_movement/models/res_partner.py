@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+
 
 class ResPartner(models.Model):
     _inherit = 'res.partner'
@@ -7,3 +8,28 @@ class ResPartner(models.Model):
         default=False,
         help='If checked, this partner appears in the POS Partner Drawing flow.',
     )
+
+    @api.model
+    def get_customer_balances(self):
+        """Return partners with non-zero AR balance for POS overview."""
+        self.env.cr.execute("""
+            SELECT
+                aml.partner_id,
+                rp.name,
+                SUM(aml.debit) - SUM(aml.credit) AS balance
+            FROM account_move_line aml
+            JOIN account_move am ON am.id = aml.move_id
+            JOIN account_account aa ON aa.id = aml.account_id
+            JOIN res_partner rp ON rp.id = aml.partner_id
+            WHERE aa.account_type = 'asset_receivable'
+              AND am.state = 'posted'
+              AND aml.partner_id IS NOT NULL
+              AND aml.company_id = %s
+            GROUP BY aml.partner_id, rp.name
+            HAVING ABS(SUM(aml.debit) - SUM(aml.credit)) > 0.005
+            ORDER BY balance DESC
+        """, (self.env.company.id,))
+        return [
+            {'partner_id': r[0], 'partner_name': r[1], 'balance': round(r[2], 2)}
+            for r in self.env.cr.fetchall()
+        ]
