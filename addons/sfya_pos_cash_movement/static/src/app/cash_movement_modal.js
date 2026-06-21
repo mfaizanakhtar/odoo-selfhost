@@ -12,6 +12,7 @@ export class CashMovementModal extends Component {
     static components = { Dialog };
     static props = {
         mode: { type: String, validate: (v) => ["collect", "payout", "drawing"].includes(v) },
+        initialPartner: { type: Object, optional: true },
         close: Function,
     };
 
@@ -19,7 +20,7 @@ export class CashMovementModal extends Component {
         this.pos = useService("pos");
         this.notification = useService("notification");
         this.state = useState({
-            partner: null,
+            partner: this.props.initialPartner || null,
             journal_id: null,
             journals: [],
             amount: "",
