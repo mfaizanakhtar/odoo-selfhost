@@ -62,7 +62,7 @@ patch(ClosePosPopup.prototype, {
     },
 
     get sfyaCashAdjustment() {
-        return (this.sfya.cash.collects_total || 0) - (this.sfya.cash.payouts_total || 0);
+        return (this.sfya.cash.collects_total || 0) - (this.sfya.cash.payouts_total || 0) - (this.sfya.cash.drawings_total || 0);
     },
 
     toggleSfyaBank(journalId) {

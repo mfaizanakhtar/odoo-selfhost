@@ -62,7 +62,9 @@ export class CashMovementModal extends Component {
     }
 
     get confirmClass() {
-        return this.props.mode === "collect" ? "btn-success" : "btn-warning";
+        if (this.props.mode === "collect") return "btn-success";
+        if (this.props.mode === "drawing") return "btn-info";
+        return "btn-warning";
     }
 
     get isValid() {
