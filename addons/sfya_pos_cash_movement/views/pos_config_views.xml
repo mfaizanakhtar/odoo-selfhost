@@ -8,6 +8,7 @@
             <xpath expr="//sheet" position="inside">
                 <group string="SFYA Cash Control">
                     <field name="sfya_max_cash_difference"/>
+                    <field name="sfya_owner_drawing_account_id"/>
                 </group>
             </xpath>
         </field>

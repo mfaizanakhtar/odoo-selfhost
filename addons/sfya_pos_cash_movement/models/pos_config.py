@@ -10,3 +10,8 @@ class PosConfig(models.Model):
         help='Block session closing if cash difference (|counted - expected|) exceeds this amount. '
              'Set to 0 to disable the threshold check (zero-count check still applies).',
     )
+    sfya_owner_drawing_account_id = fields.Many2one(
+        related='company_id.sfya_owner_drawing_account_id',
+        readonly=False,
+        string='Owner Drawing Account',
+    )

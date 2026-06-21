@@ -8,6 +8,7 @@
     'depends': ['point_of_sale', 'account'],
     'data': [
         'security/ir.model.access.csv',
+        'views/res_partner_views.xml',
         'views/pos_config_views.xml',
     ],
     'assets': {
