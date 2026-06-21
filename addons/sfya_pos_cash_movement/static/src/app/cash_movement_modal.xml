@@ -66,7 +66,7 @@
             <hr/>
             <div>Date:    <t t-esc="date"/></div>
             <div>Cashier: <t t-esc="cashier"/></div>
-            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-else="">Pay Out</t></div>
+            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-else="">Pay Out</t></div>
             <hr/>
             <div>Partner: <t t-esc="partner_name"/></div>
             <div>Amount:  PKR <t t-esc="amount"/></div>
@@ -74,6 +74,7 @@
             <div>Ref:     <t t-esc="name"/></div>
             <hr/>
             <div t-if="direction === 'inbound'">Received by: ______________</div>
+            <div t-elif="direction === 'drawing'">Withdrawn by: _____________</div>
             <div t-else="">Paid to:     ______________</div>
         </div>
     </t>

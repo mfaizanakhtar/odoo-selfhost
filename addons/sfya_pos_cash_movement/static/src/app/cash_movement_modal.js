@@ -121,10 +121,19 @@ export class CashMovementModal extends Component {
         try {
             let result;
             if (this.props.mode === "drawing") {
+                const kwargs = {
+                    session_id: sessionId,
+                    partner_id: partnerId,
+                    amount,
+                    journal_id: journalId,
+                    memo,
+                };
+                if (dateVal !== undefined) kwargs.date = dateVal;
                 result = await this.pos.data.call(
                     "account.payment",
                     "sfya_pos_partner_drawing",
-                    [sessionId, partnerId, amount, journalId, memo, dateVal],
+                    [],
+                    kwargs,
                 );
             } else if (this.props.mode === "collect") {
                 const kwargs = {
@@ -173,7 +182,9 @@ export class CashMovementModal extends Component {
                 );
             }
             if (this.state.print) {
-                await this._printSlip(result);
+                const slipData = { ...result };
+                if (this.props.mode === "drawing") slipData.direction = "drawing";
+                await this._printSlip(slipData);
             }
             this.props.close();
         } catch (e) {
