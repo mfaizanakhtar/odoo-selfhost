@@ -32,7 +32,7 @@ class PosSession(models.Model):
                 'id': p.id,
                 'name': p.name,
                 'partner_id': p.partner_id.id,
-                'partner_name': p.partner_id.name,
+                'partner_name': p.partner_id.name or '',
                 'amount': p.amount,
                 'memo': p.memo or '',
             }

@@ -105,7 +105,7 @@ class AccountPayment(models.Model):
         return [{
             'id': p.id,
             'date': p.date.strftime('%d-%m-%Y'),
-            'partner_name': p.partner_id.name,
+            'partner_name': p.partner_id.name or '',
             'amount': p.amount,
             'source': 'POS' if p.pos_session_id else 'Invoice/Manual',
         } for p in payments]
