@@ -29,12 +29,23 @@ class ResPartner(models.Model):
                 p.amount for p in order.payment_ids
                 if p.payment_method_id.type != 'pay_later'
             )
-            lines = [{
-                'name': l.product_id.display_name or l.full_product_name,
-                'qty': l.qty,
-                'price_unit': l.price_unit,
-                'subtotal': l.price_subtotal_incl,
-            } for l in order.lines]
+            inv = order.account_move
+            if inv and inv.state == 'posted':
+                debit = inv.amount_total
+                lines = [{
+                    'name': (l.product_id.display_name or l.name or ''),
+                    'qty': l.quantity,
+                    'price_unit': l.price_unit,
+                    'subtotal': l.price_total,
+                } for l in inv.invoice_line_ids if l.display_type not in ('line_section', 'line_note')]
+            else:
+                debit = order.amount_total
+                lines = [{
+                    'name': l.product_id.display_name or l.full_product_name,
+                    'qty': l.qty,
+                    'price_unit': l.price_unit,
+                    'subtotal': l.price_subtotal_incl,
+                } for l in order.lines]
             rows.append({
                 'date': order.date_order.date() if hasattr(order.date_order, 'date') else order.date_order,
                 'create_date': order.create_date,
@@ -45,7 +56,7 @@ class ResPartner(models.Model):
                 'doc_model': 'pos.order',
                 'lines': lines,
                 'note': '',
-                'debit': order.amount_total,
+                'debit': debit,
                 'credit': cash_received,
                 'balance': 0.0,
             })
