@@ -30,8 +30,10 @@ class ResPartner(models.Model):
                 if p.payment_method_id.type != 'pay_later'
             )
             inv = order.account_move
+            is_refund = order.amount_total < 0
+
             if inv and inv.state == 'posted':
-                debit = inv.amount_total
+                amount = inv.amount_total
                 lines = [{
                     'name': (l.product_id.display_name or l.name or ''),
                     'qty': l.quantity,
@@ -39,25 +41,33 @@ class ResPartner(models.Model):
                     'subtotal': l.price_total,
                 } for l in inv.invoice_line_ids if l.display_type not in ('line_section', 'line_note')]
             else:
-                debit = order.amount_total
+                amount = abs(order.amount_total)
                 lines = [{
                     'name': l.product_id.display_name or l.full_product_name,
                     'qty': l.qty,
                     'price_unit': l.price_unit,
-                    'subtotal': l.price_subtotal_incl,
+                    'subtotal': abs(l.price_subtotal_incl),
                 } for l in order.lines]
+
+            if is_refund:
+                debit = abs(cash_received)
+                credit = amount
+            else:
+                debit = amount
+                credit = cash_received
+
             rows.append({
                 'date': order.date_order.date() if hasattr(order.date_order, 'date') else order.date_order,
                 'create_date': order.create_date,
-                'kind': 'pos',
-                'kind_label': _('POS Sale'),
+                'kind': 'pos_refund' if is_refund else 'pos',
+                'kind_label': _('POS Refund') if is_refund else _('POS Sale'),
                 'doc_name': order.pos_reference or order.name,
                 'doc_id': order.id,
                 'doc_model': 'pos.order',
                 'lines': lines,
                 'note': '',
                 'debit': debit,
-                'credit': cash_received,
+                'credit': credit,
                 'balance': 0.0,
             })
 
