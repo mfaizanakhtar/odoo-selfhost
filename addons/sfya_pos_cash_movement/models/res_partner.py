@@ -11,7 +11,7 @@ class ResPartner(models.Model):
 
     @api.model
     def get_customer_balances(self):
-        """Return partners with non-zero AR balance for POS overview."""
+        """Return partners with non-zero net balance (AR - AP) for POS overview."""
         self.env.cr.execute("""
             SELECT
                 aml.partner_id,
@@ -21,7 +21,7 @@ class ResPartner(models.Model):
             JOIN account_move am ON am.id = aml.move_id
             JOIN account_account aa ON aa.id = aml.account_id
             JOIN res_partner rp ON rp.id = aml.partner_id
-            WHERE aa.account_type = 'asset_receivable'
+            WHERE aa.account_type IN ('asset_receivable', 'liability_payable')
               AND am.state = 'posted'
               AND aml.partner_id IS NOT NULL
               AND aml.company_id = %s
