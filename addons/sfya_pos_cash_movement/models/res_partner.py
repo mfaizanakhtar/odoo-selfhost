@@ -10,6 +10,12 @@ class ResPartner(models.Model):
     )
 
     @api.model
+    def _load_pos_data_fields(self, config_id):
+        fields = super()._load_pos_data_fields(config_id)
+        fields += ['supplier_rank', 'is_shareholder']
+        return fields
+
+    @api.model
     def get_customer_balances(self):
         """Return partners with non-zero net balance (AR - AP) for POS overview."""
         self.env.cr.execute("""
