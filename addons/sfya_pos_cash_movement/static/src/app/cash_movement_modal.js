@@ -101,10 +101,6 @@ export class CashMovementModal extends Component {
             this.state.partner ? { partner: this.state.partner } : {},
         );
         if (!partner) return;
-        if (this.props.mode === "payout" && !partner.supplier_rank) {
-            this.state.error = _t("Pay Out is only allowed for vendors.");
-            return;
-        }
         this.state.partner = partner;
         this.state.error = "";
     }
