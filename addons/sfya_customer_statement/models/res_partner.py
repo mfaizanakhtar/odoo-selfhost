@@ -135,20 +135,27 @@ class ResPartner(models.Model):
                 'balance': 0.0,
             })
 
-        # Customer payments
+        # Payments (inbound = credit / reduces net owed to us, outbound = debit
+        # / raises net owed to us). Direction, not partner_type, decides the
+        # sign — a partner can be both customer and vendor, so a "customer"
+        # payment can be outbound (refund) and a "supplier" payment can be
+        # inbound (vendor collects/refunds cash to us).
+        drawing_account = self.env.company.sfya_owner_drawing_account_id
         pay_domain = [
             ('partner_id', '=', self.id),
-            ('partner_type', '=', 'customer'),
             ('date', '>=', date_from),
             ('date', '<=', date_to),
             ('state', 'in', ['paid', 'in_process']),
         ]
         for pay in self.env['account.payment'].search(pay_domain):
+            if drawing_account and pay.destination_account_id == drawing_account:
+                continue  # owner's equity drawing, not a customer/vendor movement
+            is_inbound = pay.payment_type == 'inbound'
             rows.append({
                 'date': pay.date,
                 'create_date': pay.create_date,
-                'kind': 'payment',
-                'kind_label': _('Payment Received'),
+                'kind': 'payment' if is_inbound else 'payment_out',
+                'kind_label': _('Payment Received') if is_inbound else _('Payment Out'),
                 'doc_name': pay.name,
                 'doc_id': pay.id,
                 'doc_model': 'account.payment',
@@ -156,34 +163,8 @@ class ResPartner(models.Model):
                 'note': _('Payment - %s', pay.journal_id.name) + (
                     ' (%s)' % pay.memo if pay.memo else ''
                 ),
-                'debit': 0.0,
-                'credit': pay.amount,
-                'balance': 0.0,
-            })
-
-        # Vendor payments (we paid them — reduces our debt, raises net owed to us)
-        vpay_domain = [
-            ('partner_id', '=', self.id),
-            ('partner_type', '=', 'supplier'),
-            ('date', '>=', date_from),
-            ('date', '<=', date_to),
-            ('state', 'in', ['paid', 'in_process']),
-        ]
-        for pay in self.env['account.payment'].search(vpay_domain):
-            rows.append({
-                'date': pay.date,
-                'create_date': pay.create_date,
-                'kind': 'vendor_payment',
-                'kind_label': _('Vendor Payment'),
-                'doc_name': pay.name,
-                'doc_id': pay.id,
-                'doc_model': 'account.payment',
-                'lines': [],
-                'note': _('Vendor Payment - %s', pay.journal_id.name) + (
-                    ' (%s)' % pay.memo if pay.memo else ''
-                ),
-                'debit': pay.amount,
-                'credit': 0.0,
+                'debit': 0.0 if is_inbound else pay.amount,
+                'credit': pay.amount if is_inbound else 0.0,
                 'balance': 0.0,
             })
 

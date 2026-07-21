@@ -86,9 +86,45 @@ class AccountPayment(models.Model):
             'journal_type': journal.type,
         }
 
+    def _sfya_resolve_partner_type(self, partner, payment_type):
+        """Detect whether a POS cash movement should post against the
+        partner's payable (vendor) or receivable (customer) account.
+
+        Partners are often both customer and vendor, so this uses live
+        balances rather than a static rank. On a tie (owed on both sides
+        at once) supplier wins - Pay Out originally exists to settle
+        vendor bills. Falls back to rank when there's no balance on
+        either side (e.g. first-ever payment to a new partner).
+        """
+        payable = partner.debit or 0.0      # we owe them
+        receivable = partner.credit or 0.0  # they owe us
+        tol = 0.005  # ignore floating-point noise around a zero balance
+
+        if payment_type == 'outbound':
+            if payable > tol:
+                return 'supplier'
+            if receivable < -tol:
+                return 'customer'
+        else:
+            if receivable > tol:
+                return 'customer'
+            if payable < -tol:
+                return 'supplier'
+
+        if partner.supplier_rank:
+            return 'supplier'
+        if partner.customer_rank:
+            return 'customer'
+        return None
+
     @api.model
     def get_recent_collections(self, date_from, date_to):
-        """Return inbound customer payments in date range for POS overview."""
+        """Return inbound payments in date range for POS overview.
+
+        Not filtered by partner_type: a dual-role partner's inbound
+        payment can resolve to 'supplier' (e.g. a vendor returning cash
+        to us), and that's still cash collected worth showing here.
+        """
         try:
             d_from = fields.Date.from_string(date_from)
             d_to = fields.Date.from_string(date_to)
@@ -96,7 +132,6 @@ class AccountPayment(models.Model):
             raise UserError(_("Invalid date format."))
         payments = self.sudo().search([
             ('payment_type', '=', 'inbound'),
-            ('partner_type', '=', 'customer'),
             ('state', 'in', ['posted', 'paid', 'in_process']),
             ('date', '>=', d_from),
             ('date', '<=', d_to),
@@ -117,8 +152,13 @@ class AccountPayment(models.Model):
         partner = self.env['res.partner'].sudo().browse(partner_id).exists()
         if not partner:
             raise UserError(_('Partner not found.'))
-        if payment_type == 'outbound' and not partner.supplier_rank:
-            raise UserError(_('Pay Out is only allowed for vendor partners.'))
+        partner_type = self._sfya_resolve_partner_type(partner, payment_type)
+        if not partner_type:
+            raise UserError(
+                _('This partner has no outstanding vendor bill or customer credit to pay out.')
+                if payment_type == 'outbound'
+                else _('This partner has no customer or vendor relationship to collect from.')
+            )
         if amount <= 0:
             raise UserError(_('Amount must be greater than zero.'))
         if not journal_id:
@@ -139,7 +179,6 @@ class AccountPayment(models.Model):
             if resolved_date > fields.Date.today():
                 raise UserError(_("Date cannot be in the future."))
         # cash journal: ignore passed date; resolved_date stays today
-        partner_type = 'supplier' if payment_type == 'outbound' else 'customer'
         payment = self.sudo().create({
             'partner_id': partner.id,
             'partner_type': partner_type,

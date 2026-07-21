@@ -5,7 +5,7 @@
         XPath anchor: the <hr/> element that sits between the payment-methods-overview
         div and the Cash Count input area. This is the single <hr/> in the template
         and is a stable anchor in Odoo 18's closing_popup.xml.
-        We inject SFYA Customer Receipts / Vendor Pay-outs sections after it.
+        We inject SFYA Customer Receipts / Pay-outs sections after it.
     -->
     <t t-name="sfya_pos_cash_movement.ClosePosPopup"
        t-inherit="point_of_sale.ClosePosPopup"
@@ -47,7 +47,7 @@
                          t-on-click="() => sfya.cashPayoutsOpen = !sfya.cashPayoutsOpen">
                         <span>
                             <i class="fa" t-att-class="sfya.cashPayoutsOpen ? 'fa-chevron-down' : 'fa-chevron-right'"/>
-                            Vendor Pay-outs (Cash)
+                            Pay-outs (Cash)
                         </span>
                         <span class="text-warning">
                             -<t t-esc="sfya.cash.payouts_total.toFixed(2)"/>
