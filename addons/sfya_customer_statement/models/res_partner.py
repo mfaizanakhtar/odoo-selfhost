@@ -168,6 +168,39 @@ class ResPartner(models.Model):
                 'balance': 0.0,
             })
 
+        # Partner transfers (POS Pay Out "settle via another partner" flow).
+        # No cash/bank leg at all: the funder's debt to us is reduced (credit,
+        # same sign as Payment Received) and the recipient's debt owed by us
+        # is reduced (debit, same sign as Payment Out). Each transfer touches
+        # exactly two partners, so this partner is either the funder or the
+        # recipient on any given row, never both.
+        transfer_domain = [
+            ('sfya_is_partner_transfer', '=', True),
+            ('date', '>=', date_from),
+            ('date', '<=', date_to),
+            ('state', '=', 'posted'),
+            '|',
+            ('sfya_transfer_from_partner_id', '=', self.id),
+            ('sfya_transfer_to_partner_id', '=', self.id),
+        ]
+        for mv in self.env['account.move'].search(transfer_domain):
+            is_funder = mv.sfya_transfer_from_partner_id.id == self.id
+            other = mv.sfya_transfer_to_partner_id if is_funder else mv.sfya_transfer_from_partner_id
+            rows.append({
+                'date': mv.date,
+                'create_date': mv.create_date,
+                'kind': 'transfer_out' if is_funder else 'transfer_in',
+                'kind_label': _('Settled via %s', other.name) if is_funder else _('Paid via %s', other.name),
+                'doc_name': mv.name,
+                'doc_id': mv.id,
+                'doc_model': 'account.move',
+                'lines': [],
+                'note': mv.ref or '',
+                'debit': 0.0 if is_funder else mv.sfya_transfer_amount,
+                'credit': mv.sfya_transfer_amount if is_funder else 0.0,
+                'balance': 0.0,
+            })
+
         # Manual journal entries on partner's AR account (excludes auto-generated
         # invoice/payment moves which are move_type != 'entry'). Opening-balance
         # JEs (wizard ref or any move touching the Opening Balance Equity
@@ -190,6 +223,7 @@ class ResPartner(models.Model):
                 ('move_id.ref', 'not like', 'OPENING-BAL-%'),
                 ('move_id.pos_payment_ids', '=', False),
                 ('move_id.origin_payment_id', '=', False),
+                ('move_id.sfya_is_partner_transfer', '=', False),
             ]
             if opening_move_ids:
                 je_domain.append(('move_id', 'not in', list(opening_move_ids)))

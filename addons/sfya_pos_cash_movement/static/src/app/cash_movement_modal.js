@@ -29,6 +29,8 @@ export class CashMovementModal extends Component {
             print: false,
             submitting: false,
             error: "",
+            destination: "journal", // "journal" | "partner" (payout mode only)
+            fundingPartner: null,
         });
         onWillStart(async () => {
             try {
@@ -68,14 +70,23 @@ export class CashMovementModal extends Component {
         return "btn-warning";
     }
 
+    get canUsePartnerDestination() {
+        return this.props.mode === "payout";
+    }
+
+    get isPartnerDestination() {
+        return this.canUsePartnerDestination && this.state.destination === "partner";
+    }
+
     get isValid() {
         const amt = parseFloat(this.state.amount);
-        return (
-            !!this.state.partner &&
-            !!this.state.journal_id &&
-            Number.isFinite(amt) && amt > 0 &&
-            !this.state.submitting
-        );
+        if (!Number.isFinite(amt) || amt <= 0 || this.state.submitting || !this.state.partner) {
+            return false;
+        }
+        if (this.isPartnerDestination) {
+            return !!this.state.fundingPartner && this.state.fundingPartner.id !== this.state.partner.id;
+        }
+        return !!this.state.journal_id;
     }
 
     get selectedJournalIsBank() {
@@ -105,6 +116,21 @@ export class CashMovementModal extends Component {
         this.state.error = "";
     }
 
+    async pickFundingPartner() {
+        const partner = await makeAwaitable(
+            this.pos.dialog,
+            PartnerList,
+            this.state.fundingPartner ? { partner: this.state.fundingPartner } : {},
+        );
+        if (!partner) return;
+        if (this.state.partner && partner.id === this.state.partner.id) {
+            this.state.error = _t("Funding partner must be different from the recipient partner.");
+            return;
+        }
+        this.state.fundingPartner = partner;
+        this.state.error = "";
+    }
+
     async confirm() {
         if (!this.isValid) return;
         this.state.submitting = true;
@@ -114,9 +140,46 @@ export class CashMovementModal extends Component {
         const amount = parseFloat(this.state.amount);
         const journalId = this.state.journal_id;
         const memo = this.state.memo || "";
-        const dateVal = this.selectedJournalIsBank ? this.state.date : undefined;
+        const dateVal = this.isPartnerDestination
+            ? undefined
+            : this.selectedJournalIsBank ? this.state.date : undefined;
         try {
             let result;
+            if (this.isPartnerDestination) {
+                const kwargs = {
+                    session_id: sessionId,
+                    from_partner_id: this.state.fundingPartner.id,
+                    to_partner_id: partnerId,
+                    amount,
+                    memo,
+                };
+                result = await this.pos.data.call(
+                    "account.move",
+                    "sfya_pos_partner_transfer",
+                    [],
+                    kwargs,
+                );
+                this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
+                this.pos.sfyaCashMovements.push(result);
+                this.notification.add(
+                    _t("Paid %s to %s, funded by %s", result.amount, result.to_partner_name, result.from_partner_name),
+                    { type: "success" },
+                );
+                if (this.state.print) {
+                    await this._printSlip({
+                        direction: "transfer",
+                        name: result.name,
+                        partner_name: result.to_partner_name,
+                        funding_partner_name: result.from_partner_name,
+                        amount: result.amount,
+                        memo: result.memo,
+                        date: new Date().toLocaleString(),
+                        cashier: this.pos.get_cashier()?.name || "",
+                    });
+                }
+                this.props.close();
+                return;
+            }
             if (this.props.mode === "drawing") {
                 const kwargs = {
                     session_id: sessionId,
@@ -198,6 +261,7 @@ export class CashMovementModal extends Component {
                     direction: result.direction,
                     name: result.name,
                     partner_name: result.partner_name,
+                    funding_partner_name: result.funding_partner_name || "",
                     amount: result.amount,
                     memo: result.memo,
                     date: new Date().toLocaleString(),

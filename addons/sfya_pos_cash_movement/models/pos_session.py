@@ -86,6 +86,27 @@ class PosSession(models.Model):
             'banks': banks,
         }
 
+    def get_sfya_partner_transfers(self):
+        """Return this session's partner-transfer entries, informational only.
+
+        These never touch cash/bank (no journal leg at all), so they carry
+        no till impact and aren't part of get_sfya_cash_movements.
+        """
+        self.ensure_one()
+        moves = self.env['account.move'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('sfya_is_partner_transfer', '=', True),
+            ('state', '=', 'posted'),
+        ], order='create_date asc')
+        return [{
+            'id': m.id,
+            'name': m.name,
+            'from_partner_name': m.sfya_transfer_from_partner_id.name or '',
+            'to_partner_name': m.sfya_transfer_to_partner_id.name or '',
+            'amount': m.sfya_transfer_amount,
+            'memo': m.ref or '',
+        } for m in moves]
+
     @api.model
     def get_sfya_allowed_journals(self, session_id):
         """Return cash + bank journals selectable from the Cash Movement modal.

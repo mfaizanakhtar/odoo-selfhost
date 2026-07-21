@@ -32,9 +32,11 @@ patch(ClosePosPopup.prototype, {
                 drawings_total: 0,
             },
             banks: [],
+            transfers: [],
             cashCollectsOpen: true,
             cashPayoutsOpen: true,
             drawingsOpen: true,
+            transfersOpen: true,
             banksOpen: {}, // journal_id -> boolean
             loaded: false,
             closeError: null,
@@ -58,11 +60,24 @@ patch(ClosePosPopup.prototype, {
                 console.warn("[SFYA] Failed to load cash movements:", e);
                 this.sfya.loaded = true;
             }
+            try {
+                this.sfya.transfers = await this.pos.data.call(
+                    "pos.session",
+                    "get_sfya_partner_transfers",
+                    [[this.pos.session.id]],
+                );
+            } catch (e) {
+                console.warn("[SFYA] Failed to load partner transfers:", e);
+            }
         });
     },
 
     get sfyaCashAdjustment() {
         return (this.sfya.cash.collects_total || 0) - (this.sfya.cash.payouts_total || 0) - (this.sfya.cash.drawings_total || 0);
+    },
+
+    get sfyaTransfersTotal() {
+        return this.sfya.transfers.reduce((sum, t) => sum + t.amount, 0);
     },
 
     toggleSfyaBank(journalId) {

@@ -15,3 +15,8 @@ class PosConfig(models.Model):
         readonly=False,
         string='Owner Drawing Account',
     )
+    sfya_partner_transfer_journal_id = fields.Many2one(
+        related='company_id.sfya_partner_transfer_journal_id',
+        readonly=False,
+        string='Partner Transfer Journal',
+    )

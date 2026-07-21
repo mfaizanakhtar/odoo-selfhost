@@ -1,6 +1,6 @@
 {
     'name': 'SFYA Customer Statement',
-    'version': '18.0.2.2.0',
+    'version': '18.0.2.3.0',
     'summary': 'Per-customer statement with item-level detail (POS, invoices, payments, manual entries) + opening balance wizard',
     'category': 'Accounting',
     'author': 'SFYA Enterprises',

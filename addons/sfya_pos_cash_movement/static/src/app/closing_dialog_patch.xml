@@ -11,7 +11,7 @@
        t-inherit="point_of_sale.ClosePosPopup"
        t-inherit-mode="extension">
         <xpath expr="//hr" position="after">
-            <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.cash.drawings.length or sfya.banks.length)"
+            <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.cash.drawings.length or sfya.banks.length or sfya.transfers.length)"
                  class="o_sfya_cash_movements mt-2">
 
                 <div t-if="sfya.closeError" class="alert alert-danger mb-2" t-esc="sfya.closeError"/>
@@ -83,6 +83,32 @@
                                     <td t-esc="d.partner_name"/>
                                     <td class="text-muted" t-esc="d.memo"/>
                                     <td class="text-end" t-esc="d.amount.toFixed(2)"/>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Partner transfers: no cash/bank leg at all, informational only -->
+                <div t-if="sfya.transfers.length" class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"
+                         t-on-click="() => sfya.transfersOpen = !sfya.transfersOpen">
+                        <span>
+                            <i class="fa" t-att-class="sfya.transfersOpen ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                            Partner Transfers
+                            <small class="text-muted ms-2">(informational, no till impact)</small>
+                        </span>
+                        <span class="text-muted">
+                            <t t-esc="sfyaTransfersTotal.toFixed(2)"/>
+                        </span>
+                    </div>
+                    <table t-if="sfya.transfersOpen" class="table table-sm mb-0 mt-1">
+                        <tbody>
+                            <t t-foreach="sfya.transfers" t-as="r" t-key="r.id">
+                                <tr>
+                                    <td><t t-esc="r.to_partner_name"/> <small class="text-muted">via <t t-esc="r.from_partner_name"/></small></td>
+                                    <td t-esc="r.memo"/>
+                                    <td class="text-end" t-esc="r.amount.toFixed(2)"/>
                                 </tr>
                             </t>
                         </tbody>

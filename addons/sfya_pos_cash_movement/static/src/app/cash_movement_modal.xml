@@ -5,24 +5,6 @@
         <Dialog title="title" size="'md'">
             <div class="o_cash_movement_modal d-flex flex-column gap-3">
                 <div>
-                    <label class="form-label fw-bold">Account</label>
-                    <select class="form-select" t-model.number="state.journal_id"
-                            t-att-disabled="state.submitting or !state.journals.length">
-                        <t t-foreach="state.journals" t-as="j" t-key="j.id">
-                            <option t-att-value="j.id">
-                                <t t-esc="j.name"/>
-                                <t t-if="j.type === 'bank'"> (Bank)</t>
-                            </option>
-                        </t>
-                    </select>
-                </div>
-                <div t-if="selectedJournalIsBank">
-                    <label class="form-label fw-bold">Date</label>
-                    <input type="date" class="form-control"
-                           t-model="state.date" t-att-max="todayStr"/>
-                    <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
-                </div>
-                <div>
                     <label class="form-label fw-bold">Partner</label>
                     <div class="d-flex align-items-center gap-2">
                         <button class="btn btn-outline-secondary" t-on-click="pickPartner">
@@ -30,6 +12,47 @@
                             <t t-else="">Select Partner</t>
                         </button>
                     </div>
+                </div>
+                <div t-if="canUsePartnerDestination">
+                    <label class="form-label fw-bold">Destination</label>
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="btn"
+                                t-att-class="state.destination === 'journal' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => state.destination = 'journal'">Cash / Bank</button>
+                        <button type="button" class="btn"
+                                t-att-class="state.destination === 'partner' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => state.destination = 'partner'">Another Partner</button>
+                    </div>
+                </div>
+                <t t-if="!isPartnerDestination">
+                    <div>
+                        <label class="form-label fw-bold">Account</label>
+                        <select class="form-select" t-model.number="state.journal_id"
+                                t-att-disabled="state.submitting or !state.journals.length">
+                            <t t-foreach="state.journals" t-as="j" t-key="j.id">
+                                <option t-att-value="j.id">
+                                    <t t-esc="j.name"/>
+                                    <t t-if="j.type === 'bank'"> (Bank)</t>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div t-if="selectedJournalIsBank">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control"
+                               t-model="state.date" t-att-max="todayStr"/>
+                        <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
+                    </div>
+                </t>
+                <div t-else="">
+                    <label class="form-label fw-bold">Funded By</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-secondary" t-on-click="pickFundingPartner">
+                            <t t-if="state.fundingPartner" t-esc="state.fundingPartner.name"/>
+                            <t t-else="">Select Partner</t>
+                        </button>
+                    </div>
+                    <small class="text-muted">This partner's balance settles the payout instead of cash/bank. No till impact.</small>
                 </div>
                 <div>
                     <label class="form-label fw-bold">Amount</label>
@@ -66,9 +89,10 @@
             <hr/>
             <div>Date:    <t t-esc="date"/></div>
             <div>Cashier: <t t-esc="cashier"/></div>
-            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-else="">Pay Out</t></div>
+            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-elif="direction === 'transfer'">Pay Out (via Partner)</t><t t-else="">Pay Out</t></div>
             <hr/>
             <div>Partner: <t t-esc="partner_name"/></div>
+            <div t-if="funding_partner_name">Funded By: <t t-esc="funding_partner_name"/></div>
             <div>Amount:  PKR <t t-esc="amount"/></div>
             <div t-if="memo">Memo:    <t t-esc="memo"/></div>
             <div>Ref:     <t t-esc="name"/></div>
