@@ -27,14 +27,23 @@ def _post_init_create_drawing_account(env):
     for company in env['res.company'].search([]):
         if company.sfya_partner_transfer_journal_id:
             continue
-        journals = env['account.journal'].search([
-            ('type', '=', 'general'),
+        # Dedicated journal rather than reusing an existing general journal
+        # (e.g. Misc Operations): that journal's move-name sequence is
+        # whatever the company already uses it for, and partner-transfer
+        # entries would inherit an unrelated naming pattern.
+        existing = env['account.journal'].search([
+            ('code', '=', 'PXFR'),
             ('company_id', '=', company.id),
-        ])
-        if not journals:
+        ], limit=1)
+        if existing:
+            company.sfya_partner_transfer_journal_id = existing.id
             continue
-        # Standard CoA installs name this journal's code 'MISC'; prefer it
-        # when present so behavior matches the previous auto-search, but
-        # fall back to the first general journal for non-standard setups.
-        journal = journals.filtered(lambda j: j.code == 'MISC')[:1] or journals[:1]
+        if not env['account.account'].search_count([('company_ids', 'in', company.id)], limit=1):
+            continue
+        journal = env['account.journal'].create({
+            'name': 'Partner Transfers',
+            'code': 'PXFR',
+            'type': 'general',
+            'company_id': company.id,
+        })
         company.sfya_partner_transfer_journal_id = journal.id
