@@ -12,6 +12,21 @@ class AccountPayment(models.Model):
         copy=False,
         help='If set, payment originated from POS Collect/Pay-Out flow during this session.',
     )
+    sfya_is_internal_transfer = fields.Boolean(
+        default=False,
+        copy=False,
+        help='True for both legs of a POS-initiated journal-to-journal '
+             'transfer (e.g. shop cash till to a bank account). Used to '
+             'exclude these from the generic Collect/Pay Out/Drawing '
+             'listings and total them separately for the till '
+             'expected-cash adjustment.',
+    )
+    sfya_transfer_pair_id = fields.Many2one(
+        'account.payment',
+        string='Paired Transfer Leg',
+        copy=False,
+        help='The other leg of this internal transfer (out<->in).',
+    )
 
     @api.model
     def sfya_pos_collect(self, session_id, partner_id, amount, journal_id, memo='', date=None):
@@ -84,6 +99,83 @@ class AccountPayment(models.Model):
             'journal_id': journal.id,
             'journal_name': journal.name,
             'journal_type': journal.type,
+        }
+
+    @api.model
+    def sfya_pos_internal_transfer(self, session_id, from_journal_id, to_journal_id, amount, memo='', date=None):
+        """RPC: move funds directly between two of the company's own cash/bank
+        journals (e.g. shop cash till to a bank account, or bank to bank).
+
+        Posts two linked account.payment records with no partner, using a
+        dedicated clearing account as the counterpart on both legs so the
+        pair always nets to zero. Till expected-cash math is adjusted
+        separately in pos_session.get_sfya_cash_movements.
+        """
+        session = self.env['pos.session'].sudo().browse(session_id).exists()
+        if not session or session.state != 'opened':
+            raise UserError(_('POS session not found or not open.'))
+        if from_journal_id == to_journal_id:
+            raise UserError(_('Source and destination account must be different.'))
+        from_journal = self.env['account.journal'].sudo().browse(from_journal_id).exists()
+        to_journal = self.env['account.journal'].sudo().browse(to_journal_id).exists()
+        if not from_journal or not to_journal:
+            raise UserError(_('Account not found.'))
+        if from_journal.type not in ('cash', 'bank') or to_journal.type not in ('cash', 'bank'):
+            raise UserError(_('Both accounts must be a cash or bank journal.'))
+        if from_journal.company_id.id != session.company_id.id or to_journal.company_id.id != session.company_id.id:
+            raise UserError(_("Account does not belong to this POS's company."))
+        if amount <= 0:
+            raise UserError(_('Amount must be greater than zero.'))
+        clearing_account = session.company_id.sfya_internal_transfer_account_id
+        if not clearing_account:
+            raise UserError(_('Internal Transfer Clearing Account is not configured for this company.'))
+
+        resolved_date = fields.Date.today()
+        if (from_journal.type == 'bank' or to_journal.type == 'bank') and date:
+            try:
+                resolved_date = fields.Date.from_string(date)
+            except (ValueError, TypeError):
+                raise UserError(_("Invalid date format."))
+            if resolved_date > fields.Date.today():
+                raise UserError(_("Date cannot be in the future."))
+        # both journals cash: ignore passed date; resolved_date stays today
+
+        payment_out = self.sudo().create({
+            'payment_type': 'outbound',
+            'journal_id': from_journal.id,
+            'amount': amount,
+            'date': resolved_date,
+            'memo': memo or False,
+            'pos_session_id': session.id,
+            'destination_account_id': clearing_account.id,
+            'sfya_is_internal_transfer': True,
+        })
+        payment_in = self.sudo().create({
+            'payment_type': 'inbound',
+            'journal_id': to_journal.id,
+            'amount': amount,
+            'date': resolved_date,
+            'memo': memo or False,
+            'pos_session_id': session.id,
+            'destination_account_id': clearing_account.id,
+            'sfya_is_internal_transfer': True,
+        })
+        payment_out.sfya_transfer_pair_id = payment_in.id
+        payment_in.sfya_transfer_pair_id = payment_out.id
+        payment_out.action_post()
+        payment_in.action_post()
+        return {
+            'out_id': payment_out.id,
+            'out_name': payment_out.name,
+            'in_id': payment_in.id,
+            'in_name': payment_in.name,
+            'from_journal_id': from_journal.id,
+            'from_journal_name': from_journal.name,
+            'to_journal_id': to_journal.id,
+            'to_journal_name': to_journal.name,
+            'amount': amount,
+            'memo': memo or '',
+            'direction': 'internal_transfer',
         }
 
     def _sfya_resolve_partner_type(self, partner, payment_type):
