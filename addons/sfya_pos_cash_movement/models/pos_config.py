@@ -20,3 +20,8 @@ class PosConfig(models.Model):
         readonly=False,
         string='Partner Transfer Journal',
     )
+    sfya_internal_transfer_account_id = fields.Many2one(
+        related='company_id.sfya_internal_transfer_account_id',
+        readonly=False,
+        string='Internal Transfer Clearing Account',
+    )

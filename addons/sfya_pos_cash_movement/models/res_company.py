@@ -17,3 +17,12 @@ class ResCompany(models.Model):
              'explicitly if the company has more than one.',
         domain="[('type', '=', 'general')]",
     )
+    sfya_internal_transfer_account_id = fields.Many2one(
+        'account.account',
+        string='Internal Transfer Clearing Account',
+        help='Counterpart account used on both legs of a POS-initiated '
+             'journal-to-journal transfer (e.g. shop cash till to a bank '
+             'account). Both legs post together, so this account always '
+             'nets to zero.',
+        domain="[('account_type', '=', 'asset_current')]",
+    )

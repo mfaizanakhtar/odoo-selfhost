@@ -10,6 +10,7 @@
                     <field name="sfya_max_cash_difference"/>
                     <field name="sfya_owner_drawing_account_id"/>
                     <field name="sfya_partner_transfer_journal_id"/>
+                    <field name="sfya_internal_transfer_account_id"/>
                 </group>
             </xpath>
         </field>
