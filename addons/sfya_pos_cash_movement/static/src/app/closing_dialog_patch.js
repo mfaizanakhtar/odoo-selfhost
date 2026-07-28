@@ -33,10 +33,12 @@ patch(ClosePosPopup.prototype, {
             },
             banks: [],
             transfers: [],
+            internalTransfers: [],
             cashCollectsOpen: true,
             cashPayoutsOpen: true,
             drawingsOpen: true,
             transfersOpen: true,
+            internalTransfersOpen: true,
             banksOpen: {}, // journal_id -> boolean
             loaded: false,
             closeError: null,
@@ -69,6 +71,15 @@ patch(ClosePosPopup.prototype, {
             } catch (e) {
                 console.warn("[SFYA] Failed to load partner transfers:", e);
             }
+            try {
+                this.sfya.internalTransfers = await this.pos.data.call(
+                    "pos.session",
+                    "get_sfya_internal_transfers",
+                    [[this.pos.session.id]],
+                );
+            } catch (e) {
+                console.warn("[SFYA] Failed to load internal transfers:", e);
+            }
         });
     },
 
@@ -78,6 +89,10 @@ patch(ClosePosPopup.prototype, {
 
     get sfyaTransfersTotal() {
         return this.sfya.transfers.reduce((sum, t) => sum + t.amount, 0);
+    },
+
+    get sfyaInternalTransfersTotal() {
+        return this.sfya.internalTransfers.reduce((sum, t) => sum + t.amount, 0);
     },
 
     toggleSfyaBank(journalId) {
