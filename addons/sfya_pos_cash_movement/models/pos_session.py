@@ -9,22 +9,29 @@ class PosSession(models.Model):
 
         Returns:
             {
-                'cash': {collects, collects_total, payouts, payouts_total},
+                'cash': {collects, collects_total, payouts, payouts_total,
+                         drawings, drawings_total,
+                         transfers_in_total, transfers_out_total},
                 'banks': [
                     {journal_id, journal_name, collects, collects_total,
-                     payouts, payouts_total},
+                     payouts, payouts_total, drawings, drawings_total},
                     ...
                 ],
             }
 
         Banks list contains only journals that had at least one movement
-        this session, sorted by journal name.
+        this session, sorted by journal name. Internal-transfer payments
+        (sfya_is_internal_transfer=True) are excluded from all of the
+        above and totalled separately into cash.transfers_in_total /
+        transfers_out_total, restricted to the cash journal only - that's
+        the only leg that affects the physically-counted till.
         """
         self.ensure_one()
         payments = self.env['account.payment'].sudo().search([
             ('pos_session_id', '=', self.id),
             ('state', 'in', ['paid', 'in_process']),
             ('journal_id.type', 'in', ['cash', 'bank']),
+            ('sfya_is_internal_transfer', '=', False),
         ], order='create_date asc')
 
         def _row(p):
@@ -74,6 +81,15 @@ class PosSession(models.Model):
             b['drawings_total'] = sum(r['amount'] for r in b['drawings'])
             banks.append(b)
 
+        transfers = self.env['account.payment'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('state', 'in', ['paid', 'in_process']),
+            ('sfya_is_internal_transfer', '=', True),
+            ('journal_id.type', '=', 'cash'),
+        ])
+        transfers_in_total = sum(p.amount for p in transfers if p.payment_type == 'inbound')
+        transfers_out_total = sum(p.amount for p in transfers if p.payment_type == 'outbound')
+
         return {
             'cash': {
                 'collects': cash_collects,
@@ -82,6 +98,8 @@ class PosSession(models.Model):
                 'payouts_total': sum(r['amount'] for r in cash_payouts),
                 'drawings': cash_drawings,
                 'drawings_total': sum(r['amount'] for r in cash_drawings),
+                'transfers_in_total': transfers_in_total,
+                'transfers_out_total': transfers_out_total,
             },
             'banks': banks,
         }
@@ -107,6 +125,30 @@ class PosSession(models.Model):
             'memo': m.ref or '',
         } for m in moves]
 
+    def get_sfya_internal_transfers(self):
+        """Return this session's journal-to-journal transfers, one row per
+        pair (via the outbound leg), informational for the closing dialog.
+
+        Only the cash-journal leg (if any) affects the till count, and
+        that's already folded into get_sfya_cash_movements's cash dict -
+        this listing is purely for display.
+        """
+        self.ensure_one()
+        payments = self.env['account.payment'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('sfya_is_internal_transfer', '=', True),
+            ('payment_type', '=', 'outbound'),
+            ('state', 'in', ['paid', 'in_process']),
+        ], order='create_date asc')
+        return [{
+            'id': p.id,
+            'name': p.name,
+            'from_journal_name': p.journal_id.name,
+            'to_journal_name': p.sfya_transfer_pair_id.journal_id.name if p.sfya_transfer_pair_id else '',
+            'amount': p.amount,
+            'memo': p.memo or '',
+        } for p in payments]
+
     @api.model
     def get_sfya_allowed_journals(self, session_id):
         """Return cash + bank journals selectable from the Cash Movement modal.
@@ -130,7 +172,10 @@ class PosSession(models.Model):
         data = super().get_closing_control_data()
         movements = self.get_sfya_cash_movements()
         cash = movements.get('cash') or {}
-        adjustment = (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0) - (cash.get('drawings_total') or 0.0)
+        adjustment = (
+            (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0) - (cash.get('drawings_total') or 0.0)
+            + (cash.get('transfers_in_total') or 0.0) - (cash.get('transfers_out_total') or 0.0)
+        )
         if data.get('default_cash_details') and adjustment:
             data['default_cash_details']['amount'] = (
                 data['default_cash_details'].get('amount', 0.0) + adjustment
