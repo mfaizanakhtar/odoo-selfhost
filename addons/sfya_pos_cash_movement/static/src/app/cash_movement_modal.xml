@@ -4,27 +4,65 @@
     <t t-name="sfya_pos_cash_movement.CashMovementModal">
         <Dialog title="title" size="'md'">
             <div class="o_cash_movement_modal d-flex flex-column gap-3">
-                <div>
-                    <label class="form-label fw-bold">Partner</label>
-                    <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-secondary" t-on-click="pickPartner">
-                            <t t-if="state.partner" t-esc="state.partner.name"/>
-                            <t t-else="">Select Partner</t>
-                        </button>
+                <t t-if="props.mode !== 'transfer'">
+                    <div>
+                        <label class="form-label fw-bold">Partner</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-outline-secondary" t-on-click="pickPartner">
+                                <t t-if="state.partner" t-esc="state.partner.name"/>
+                                <t t-else="">Select Partner</t>
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div t-if="canUsePartnerDestination">
-                    <label class="form-label fw-bold">Destination</label>
-                    <div class="btn-group w-100" role="group">
-                        <button type="button" class="btn"
-                                t-att-class="state.destination === 'journal' ? 'btn-primary' : 'btn-outline-secondary'"
-                                t-on-click="() => state.destination = 'journal'">Cash / Bank</button>
-                        <button type="button" class="btn"
-                                t-att-class="state.destination === 'partner' ? 'btn-primary' : 'btn-outline-secondary'"
-                                t-on-click="() => state.destination = 'partner'">Another Partner</button>
+                    <div t-if="canUsePartnerDestination">
+                        <label class="form-label fw-bold">Destination</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn"
+                                    t-att-class="state.destination === 'journal' ? 'btn-primary' : 'btn-outline-secondary'"
+                                    t-on-click="() => state.destination = 'journal'">Cash / Bank</button>
+                            <button type="button" class="btn"
+                                    t-att-class="state.destination === 'partner' ? 'btn-primary' : 'btn-outline-secondary'"
+                                    t-on-click="() => state.destination = 'partner'">Another Partner</button>
+                        </div>
                     </div>
-                </div>
-                <t t-if="!isPartnerDestination">
+                </t>
+                <t t-if="props.mode === 'transfer'">
+                    <div>
+                        <label class="form-label fw-bold">From Account</label>
+                        <select class="form-select" t-model.number="state.fromJournalId"
+                                t-att-disabled="state.submitting or !state.journals.length">
+                            <t t-foreach="state.journals" t-as="j" t-key="j.id">
+                                <option t-att-value="j.id">
+                                    <t t-esc="j.name"/>
+                                    <t t-if="j.type === 'bank'"> (Bank)</t>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label fw-bold">To Account</label>
+                        <select class="form-select" t-model.number="state.toJournalId"
+                                t-att-disabled="state.submitting or !state.journals.length">
+                            <t t-foreach="state.journals" t-as="j" t-key="j.id">
+                                <option t-att-value="j.id">
+                                    <t t-esc="j.name"/>
+                                    <t t-if="j.type === 'bank'"> (Bank)</t>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div t-if="state.fromJournalId and state.fromJournalId === state.toJournalId"
+                         class="alert alert-warning mb-0 py-1 px-2">
+                        From and To accounts must be different.
+                    </div>
+                    <div t-if="eitherJournalIsBank">
+                        <label class="form-label fw-bold">Date</label>
+                        <input type="date" class="form-control"
+                               t-model="state.date" t-att-max="todayStr"/>
+                        <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
+                    </div>
+                </t>
+                <t t-if="props.mode !== 'transfer' and !isPartnerDestination">
                     <div>
                         <label class="form-label fw-bold">Account</label>
                         <select class="form-select" t-model.number="state.journal_id"
@@ -44,7 +82,7 @@
                         <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
                     </div>
                 </t>
-                <div t-else="">
+                <div t-if="props.mode !== 'transfer' and isPartnerDestination">
                     <label class="form-label fw-bold">Funded By</label>
                     <div class="d-flex align-items-center gap-2">
                         <button class="btn btn-outline-secondary" t-on-click="pickFundingPartner">
@@ -89,16 +127,19 @@
             <hr/>
             <div>Date:    <t t-esc="date"/></div>
             <div>Cashier: <t t-esc="cashier"/></div>
-            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-elif="direction === 'transfer'">Pay Out (via Partner)</t><t t-else="">Pay Out</t></div>
+            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-elif="direction === 'transfer'">Pay Out (via Partner)</t><t t-elif="direction === 'internal_transfer'">Internal Transfer</t><t t-else="">Pay Out</t></div>
             <hr/>
-            <div>Partner: <t t-esc="partner_name"/></div>
+            <div t-if="direction !== 'internal_transfer'">Partner: <t t-esc="partner_name"/></div>
             <div t-if="funding_partner_name">Funded By: <t t-esc="funding_partner_name"/></div>
+            <div t-if="direction === 'internal_transfer'">From:    <t t-esc="from_journal_name"/></div>
+            <div t-if="direction === 'internal_transfer'">To:      <t t-esc="to_journal_name"/></div>
             <div>Amount:  PKR <t t-esc="amount"/></div>
             <div t-if="memo">Memo:    <t t-esc="memo"/></div>
             <div>Ref:     <t t-esc="name"/></div>
             <hr/>
             <div t-if="direction === 'inbound'">Received by: ______________</div>
             <div t-elif="direction === 'drawing'">Withdrawn by: _____________</div>
+            <div t-elif="direction === 'internal_transfer'">Processed by: ______________</div>
             <div t-else="">Paid to:     ______________</div>
         </div>
     </t>

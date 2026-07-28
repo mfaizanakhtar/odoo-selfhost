@@ -11,7 +11,7 @@ export class CashMovementModal extends Component {
     static template = "sfya_pos_cash_movement.CashMovementModal";
     static components = { Dialog };
     static props = {
-        mode: { type: String, validate: (v) => ["collect", "payout", "drawing"].includes(v) },
+        mode: { type: String, validate: (v) => ["collect", "payout", "drawing", "transfer"].includes(v) },
         initialPartner: { type: Object, optional: true },
         close: Function,
     };
@@ -23,6 +23,8 @@ export class CashMovementModal extends Component {
             partner: this.props.initialPartner || null,
             journal_id: null,
             journals: [],
+            fromJournalId: null,
+            toJournalId: null,
             amount: "",
             memo: "",
             date: this._todayStr(),
@@ -43,6 +45,12 @@ export class CashMovementModal extends Component {
                 this.state.journals = journals || [];
                 if (this.state.journals.length > 0) {
                     this.state.journal_id = this.state.journals[0].id;
+                    if (this.props.mode === "transfer") {
+                        this.state.fromJournalId = this.state.journals[0].id;
+                        this.state.toJournalId = this.state.journals.length > 1
+                            ? this.state.journals[1].id
+                            : null;
+                    }
                 } else {
                     this.state.error = _t("No cash or bank journal configured for this company.");
                 }
@@ -55,18 +63,21 @@ export class CashMovementModal extends Component {
     get title() {
         if (this.props.mode === "collect") return _t("Collect Payment");
         if (this.props.mode === "drawing") return _t("Partner Drawing");
+        if (this.props.mode === "transfer") return _t("Transfer Funds");
         return _t("Pay Out");
     }
 
     get confirmLabel() {
         if (this.props.mode === "collect") return _t("Collect");
         if (this.props.mode === "drawing") return _t("Record Drawing");
+        if (this.props.mode === "transfer") return _t("Transfer");
         return _t("Pay Out");
     }
 
     get confirmClass() {
         if (this.props.mode === "collect") return "btn-success";
         if (this.props.mode === "drawing") return "btn-info";
+        if (this.props.mode === "transfer") return "btn-primary";
         return "btn-warning";
     }
 
@@ -80,7 +91,17 @@ export class CashMovementModal extends Component {
 
     get isValid() {
         const amt = parseFloat(this.state.amount);
-        if (!Number.isFinite(amt) || amt <= 0 || this.state.submitting || !this.state.partner) {
+        if (!Number.isFinite(amt) || amt <= 0 || this.state.submitting) {
+            return false;
+        }
+        if (this.props.mode === "transfer") {
+            return (
+                !!this.state.fromJournalId &&
+                !!this.state.toJournalId &&
+                this.state.fromJournalId !== this.state.toJournalId
+            );
+        }
+        if (!this.state.partner) {
             return false;
         }
         if (this.isPartnerDestination) {
@@ -92,6 +113,12 @@ export class CashMovementModal extends Component {
     get selectedJournalIsBank() {
         const j = this.state.journals.find((x) => x.id === this.state.journal_id);
         return j?.type === "bank";
+    }
+
+    get eitherJournalIsBank() {
+        const from = this.state.journals.find((x) => x.id === this.state.fromJournalId);
+        const to = this.state.journals.find((x) => x.id === this.state.toJournalId);
+        return from?.type === "bank" || to?.type === "bank";
     }
 
     get todayStr() {
@@ -136,10 +163,51 @@ export class CashMovementModal extends Component {
         this.state.submitting = true;
         this.state.error = "";
         const sessionId = this.pos.session.id;
-        const partnerId = this.state.partner.id;
         const amount = parseFloat(this.state.amount);
-        const journalId = this.state.journal_id;
         const memo = this.state.memo || "";
+
+        if (this.props.mode === "transfer") {
+            try {
+                const kwargs = {
+                    session_id: sessionId,
+                    from_journal_id: this.state.fromJournalId,
+                    to_journal_id: this.state.toJournalId,
+                    amount,
+                    memo,
+                };
+                if (this.eitherJournalIsBank) kwargs.date = this.state.date;
+                const result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_internal_transfer",
+                    [],
+                    kwargs,
+                );
+                this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
+                this.pos.sfyaCashMovements.push(result);
+                this.notification.add(
+                    _t("Transferred %s from %s to %s", result.amount, result.from_journal_name, result.to_journal_name),
+                    { type: "success" },
+                );
+                if (this.state.print) {
+                    await this._printSlip({
+                        direction: "internal_transfer",
+                        name: `${result.out_name} / ${result.in_name}`,
+                        from_journal_name: result.from_journal_name,
+                        to_journal_name: result.to_journal_name,
+                        amount: result.amount,
+                        memo: result.memo,
+                    });
+                }
+                this.props.close();
+            } catch (e) {
+                this.state.error = e?.data?.message || e?.message || _t("Failed to record transfer.");
+                this.state.submitting = false;
+            }
+            return;
+        }
+
+        const partnerId = this.state.partner.id;
+        const journalId = this.state.journal_id;
         const dateVal = this.isPartnerDestination
             ? undefined
             : this.selectedJournalIsBank ? this.state.date : undefined;
@@ -262,6 +330,8 @@ export class CashMovementModal extends Component {
                     name: result.name,
                     partner_name: result.partner_name,
                     funding_partner_name: result.funding_partner_name || "",
+                    from_journal_name: result.from_journal_name || "",
+                    to_journal_name: result.to_journal_name || "",
                     amount: result.amount,
                     memo: result.memo,
                     date: new Date().toLocaleString(),

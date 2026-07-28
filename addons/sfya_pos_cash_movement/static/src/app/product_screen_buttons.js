@@ -15,6 +15,9 @@ patch(ControlButtons.prototype, {
     openDrawing() {
         this.dialog.add(CashMovementModal, { mode: "drawing" });
     },
+    openTransfer() {
+        this.dialog.add(CashMovementModal, { mode: "transfer" });
+    },
     openOverview() {
         this.dialog.add(CustomerOverviewModal, {});
     },
