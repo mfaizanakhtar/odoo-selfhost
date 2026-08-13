@@ -413,8 +413,9 @@ Buttons: "Salary Advance" (`o_cash_movement_salary_advance` class, `fa-clock-o` 
 ## Out of Scope
 
 - No payroll periods/schedules, tax/deduction calculations, payslip documents, or employee self-service — this is purely POS-triggered cash movement + expense recognition, same tier as the existing Collect/Pay Out/Drawing/Transfer actions.
-- No `sfya_customer_statement` changes — salary legs use `hr.employee`'s linked partner only for the accounting partner ledger; they are not customer/vendor transactions and won't be routed into that statement's rows (mirrors the Internal Transfer feature's exclusion, verified by the same reasoning: no vendor-bill/customer-credit relationship is involved).
 - No enforcement that an employee can only have salary paid once per pay period — the cashier is trusted to not double-pay, same trust level as every other action in this module.
+
+**Correction (found during planning, not caught during design):** unlike Internal Transfer, salary legs DO set a real `partner_id` (`employee.work_contact_id`) — same as Partner Drawing. `sfya_customer_statement`'s `get_statement_data` queries every `account.payment` by `partner_id` and only excludes Partner Drawing via a `destination_account_id == drawing_account` check. Without an equivalent exclusion for `sfya_salary_kind`, salary legs would incorrectly appear as "Payment Out" rows on the employee's statement. A small exclusion patch to `sfya_customer_statement/models/res_partner.py` is required — see the implementation plan's Task 3.
 
 ## Files
 
