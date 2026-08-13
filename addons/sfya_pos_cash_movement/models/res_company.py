@@ -26,3 +26,26 @@ class ResCompany(models.Model):
              'nets to zero.',
         domain="[('account_type', '=', 'asset_current')]",
     )
+    sfya_salary_expense_account_id = fields.Many2one(
+        'account.account',
+        string='Salary Expense Account',
+        help='Expense account debited when salary is paid to an employee via POS.',
+        domain="[('account_type', '=', 'expense')]",
+    )
+    sfya_employee_advance_account_id = fields.Many2one(
+        'account.account',
+        string='Employee Advance Account',
+        help='Asset account debited when an employee is given a salary '
+             'advance via POS, and credited when that advance is later '
+             'offset against a salary payment.',
+        domain="[('account_type', '=', 'asset_current')]",
+    )
+    sfya_salary_journal_id = fields.Many2one(
+        'account.journal',
+        string='Salary Offset Journal',
+        help='Miscellaneous-operations journal used to post the cash-free '
+             'portion of a POS salary payment that offsets a prior advance. '
+             'Dedicated (not shared with Partner Transfer) so its move-name '
+             'sequence is specific to salary entries.',
+        domain="[('type', '=', 'general')]",
+    )

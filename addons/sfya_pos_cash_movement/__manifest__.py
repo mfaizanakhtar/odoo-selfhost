@@ -1,11 +1,11 @@
 {
     'name': 'SFYA POS Cash Movement',
-    'version': '18.0.6.0.4',
+    'version': '18.0.6.0.5',
     'summary': 'Collect Payment, Pay Out, Partner Drawing & Customer Overview on POS',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
     'license': 'LGPL-3',
-    'depends': ['point_of_sale', 'account'],
+    'depends': ['point_of_sale', 'account', 'hr'],
     'data': [
         'security/ir.model.access.csv',
         'views/res_partner_views.xml',

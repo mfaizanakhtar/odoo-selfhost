@@ -25,3 +25,18 @@ class PosConfig(models.Model):
         readonly=False,
         string='Internal Transfer Clearing Account',
     )
+    sfya_salary_expense_account_id = fields.Many2one(
+        related='company_id.sfya_salary_expense_account_id',
+        readonly=False,
+        string='Salary Expense Account',
+    )
+    sfya_employee_advance_account_id = fields.Many2one(
+        related='company_id.sfya_employee_advance_account_id',
+        readonly=False,
+        string='Employee Advance Account',
+    )
+    sfya_salary_journal_id = fields.Many2one(
+        related='company_id.sfya_salary_journal_id',
+        readonly=False,
+        string='Salary Offset Journal',
+    )

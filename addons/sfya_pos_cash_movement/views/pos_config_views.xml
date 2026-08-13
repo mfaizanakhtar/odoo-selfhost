@@ -11,6 +11,9 @@
                     <field name="sfya_owner_drawing_account_id"/>
                     <field name="sfya_partner_transfer_journal_id"/>
                     <field name="sfya_internal_transfer_account_id"/>
+                    <field name="sfya_salary_expense_account_id"/>
+                    <field name="sfya_employee_advance_account_id"/>
+                    <field name="sfya_salary_journal_id"/>
                 </group>
             </xpath>
         </field>
