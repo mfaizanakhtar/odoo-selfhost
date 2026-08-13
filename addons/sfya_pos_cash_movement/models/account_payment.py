@@ -219,6 +219,8 @@ class AccountPayment(models.Model):
             raise UserError(_('Employee not found.'))
         if employee.company_id.id != session.company_id.id:
             raise UserError(_("Employee does not belong to this POS's company."))
+        if not employee.work_contact_id:
+            raise UserError(_('Employee has no linked contact record.'))
         if amount <= 0:
             raise UserError(_('Amount must be greater than zero.'))
         if not journal_id:
@@ -288,6 +290,8 @@ class AccountPayment(models.Model):
             raise UserError(_('Employee not found.'))
         if employee.company_id.id != session.company_id.id:
             raise UserError(_("Employee does not belong to this POS's company."))
+        if not employee.work_contact_id:
+            raise UserError(_('Employee has no linked contact record.'))
         if gross_amount <= 0:
             raise UserError(_('Amount must be greater than zero.'))
         advance_offset = advance_offset or 0.0
