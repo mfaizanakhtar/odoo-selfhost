@@ -11,7 +11,8 @@ class PosSession(models.Model):
             {
                 'cash': {collects, collects_total, payouts, payouts_total,
                          drawings, drawings_total,
-                         transfers_in_total, transfers_out_total},
+                         transfers_in_total, transfers_out_total,
+                         salary_advances_total, salary_payments_total},
                 'banks': [
                     {journal_id, journal_name, collects, collects_total,
                      payouts, payouts_total, drawings, drawings_total},
@@ -21,9 +22,9 @@ class PosSession(models.Model):
 
         Banks list contains only journals that had at least one movement
         this session, sorted by journal name. Internal-transfer payments
-        (sfya_is_internal_transfer=True) are excluded from all of the
-        above and totalled separately into cash.transfers_in_total /
-        transfers_out_total, restricted to the cash journal only - that's
+        (sfya_is_internal_transfer=True) and salary legs
+        (sfya_salary_kind set) are excluded from all of the above and
+        totalled separately, restricted to the cash journal only - that's
         the only leg that affects the physically-counted till.
         """
         self.ensure_one()
@@ -32,6 +33,7 @@ class PosSession(models.Model):
             ('state', 'in', ['paid', 'in_process']),
             ('journal_id.type', 'in', ['cash', 'bank']),
             ('sfya_is_internal_transfer', '=', False),
+            ('sfya_salary_kind', '=', False),
         ], order='create_date asc')
 
         def _row(p):
@@ -90,6 +92,15 @@ class PosSession(models.Model):
         transfers_in_total = sum(p.amount for p in transfers if p.payment_type == 'inbound')
         transfers_out_total = sum(p.amount for p in transfers if p.payment_type == 'outbound')
 
+        salary_legs = self.env['account.payment'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('state', 'in', ['paid', 'in_process']),
+            ('sfya_salary_kind', '!=', False),
+            ('journal_id.type', '=', 'cash'),
+        ])
+        salary_advances_total = sum(p.amount for p in salary_legs if p.sfya_salary_kind == 'advance')
+        salary_payments_total = sum(p.amount for p in salary_legs if p.sfya_salary_kind == 'payment')
+
         return {
             'cash': {
                 'collects': cash_collects,
@@ -100,6 +111,8 @@ class PosSession(models.Model):
                 'drawings_total': sum(r['amount'] for r in cash_drawings),
                 'transfers_in_total': transfers_in_total,
                 'transfers_out_total': transfers_out_total,
+                'salary_advances_total': salary_advances_total,
+                'salary_payments_total': salary_payments_total,
             },
             'banks': banks,
         }
@@ -149,6 +162,72 @@ class PosSession(models.Model):
             'memo': p.memo or '',
         } for p in payments]
 
+    def get_sfya_salary_payments(self):
+        """Return this session's salary advance/payment rows, merged and
+        sorted by creation time, for the closing dialog's "Salary" section.
+
+        Advances are one row each. Payments are one row per net-cash leg
+        (net_cash > 0). When an advance offset fully covers the gross
+        salary (net_cash == 0), no payment leg exists at all - that case
+        is represented by its cash-free offset account.move instead, found
+        as an "orphan" move not linked from any payment in this session.
+        """
+        self.ensure_one()
+        rows = []
+
+        advances = self.env['account.payment'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('sfya_salary_kind', '=', 'advance'),
+            ('state', 'in', ['paid', 'in_process']),
+        ], order='create_date asc')
+        for a in advances:
+            rows.append({
+                'id': a.id, 'kind': 'advance',
+                'employee_name': a.sfya_employee_id.name or '',
+                'gross_amount': a.amount, 'advance_offset': 0.0, 'net_cash': a.amount,
+                'journal_name': a.journal_id.name, 'memo': a.memo or '',
+                'create_date': a.create_date,
+            })
+
+        payments = self.env['account.payment'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('sfya_salary_kind', '=', 'payment'),
+            ('state', 'in', ['paid', 'in_process']),
+        ], order='create_date asc')
+        linked_move_ids = payments.mapped('sfya_salary_offset_move_id').ids
+        for p in payments:
+            rows.append({
+                'id': p.id, 'kind': 'payment',
+                'employee_name': p.sfya_employee_id.name or '',
+                'gross_amount': p.sfya_salary_gross_amount or p.amount,
+                'advance_offset': p.sfya_salary_advance_offset or 0.0,
+                'net_cash': p.amount,
+                'journal_name': p.journal_id.name, 'memo': p.memo or '',
+                'create_date': p.create_date,
+            })
+
+        orphan_moves = self.env['account.move'].sudo().search([
+            ('pos_session_id', '=', self.id),
+            ('sfya_is_salary_offset', '=', True),
+            ('state', '=', 'posted'),
+            ('id', 'not in', linked_move_ids),
+        ], order='create_date asc')
+        for m in orphan_moves:
+            rows.append({
+                'id': m.id, 'kind': 'payment',
+                'employee_name': m.sfya_salary_offset_employee_id.name or '',
+                'gross_amount': m.sfya_salary_offset_amount,
+                'advance_offset': m.sfya_salary_offset_amount,
+                'net_cash': 0.0,
+                'journal_name': '', 'memo': m.ref or '',
+                'create_date': m.create_date,
+            })
+
+        rows.sort(key=lambda r: r['create_date'])
+        for r in rows:
+            del r['create_date']
+        return rows
+
     @api.model
     def get_sfya_allowed_journals(self, session_id):
         """Return cash + bank journals selectable from the Cash Movement modal.
@@ -168,6 +247,20 @@ class PosSession(models.Model):
         banks = journals.filtered(lambda j: j.type == 'bank').sorted('name')
         return [{'id': j.id, 'name': j.name, 'type': j.type} for j in (cash + banks)]
 
+    @api.model
+    def get_sfya_pos_employees(self, session_id):
+        """Return active employees of the session's company, for the
+        Salary Advance / Pay Salary modal's Employee picker.
+        """
+        session = self.sudo().browse(session_id).exists()
+        if not session:
+            return []
+        employees = self.env['hr.employee'].sudo().search([
+            ('company_id', '=', session.company_id.id),
+            ('active', '=', True),
+        ], order='name')
+        return [{'id': e.id, 'name': e.name} for e in employees]
+
     def get_closing_control_data(self):
         data = super().get_closing_control_data()
         movements = self.get_sfya_cash_movements()
@@ -175,6 +268,7 @@ class PosSession(models.Model):
         adjustment = (
             (cash.get('collects_total') or 0.0) - (cash.get('payouts_total') or 0.0) - (cash.get('drawings_total') or 0.0)
             + (cash.get('transfers_in_total') or 0.0) - (cash.get('transfers_out_total') or 0.0)
+            - (cash.get('salary_advances_total') or 0.0) - (cash.get('salary_payments_total') or 0.0)
         )
         if data.get('default_cash_details') and adjustment:
             data['default_cash_details']['amount'] = (

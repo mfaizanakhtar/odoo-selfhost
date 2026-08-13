@@ -150,6 +150,8 @@ class ResPartner(models.Model):
         for pay in self.env['account.payment'].search(pay_domain):
             if drawing_account and pay.destination_account_id == drawing_account:
                 continue  # owner's equity drawing, not a customer/vendor movement
+            if pay.sfya_salary_kind:
+                continue  # POS salary advance/payment, not a customer/vendor movement
             is_inbound = pay.payment_type == 'inbound'
             rows.append({
                 'date': pay.date,
