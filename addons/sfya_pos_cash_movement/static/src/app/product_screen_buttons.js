@@ -18,6 +18,12 @@ patch(ControlButtons.prototype, {
     openTransfer() {
         this.dialog.add(CashMovementModal, { mode: "transfer" });
     },
+    openSalaryAdvance() {
+        this.dialog.add(CashMovementModal, { mode: "salary_advance" });
+    },
+    openSalaryPayment() {
+        this.dialog.add(CashMovementModal, { mode: "salary_payment" });
+    },
     openOverview() {
         this.dialog.add(CustomerOverviewModal, {});
     },

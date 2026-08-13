@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Cash Movement',
-    'version': '18.0.6.0.7',
+    'version': '18.0.6.0.8',
     'summary': 'Collect Payment, Pay Out, Partner Drawing & Customer Overview on POS',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',

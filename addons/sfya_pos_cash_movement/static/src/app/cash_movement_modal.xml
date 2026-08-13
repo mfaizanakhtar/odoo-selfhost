@@ -4,7 +4,7 @@
     <t t-name="sfya_pos_cash_movement.CashMovementModal">
         <Dialog title="title" size="'md'">
             <div class="o_cash_movement_modal d-flex flex-column gap-3">
-                <t t-if="props.mode !== 'transfer'">
+                <t t-if="props.mode !== 'transfer' and props.mode !== 'salary_advance' and props.mode !== 'salary_payment'">
                     <div>
                         <label class="form-label fw-bold">Partner</label>
                         <div class="d-flex align-items-center gap-2">
@@ -60,6 +60,29 @@
                         <input type="date" class="form-control"
                                t-model="state.date" t-att-max="todayStr"/>
                         <small class="text-muted">Date the bank transfer actually happened. Today by default.</small>
+                    </div>
+                </t>
+                <t t-if="props.mode === 'salary_advance' or props.mode === 'salary_payment'">
+                    <div>
+                        <label class="form-label fw-bold">Employee</label>
+                        <select class="form-select" t-on-change="onEmployeeChange"
+                                t-att-disabled="state.submitting or !state.employees.length">
+                            <t t-foreach="state.employees" t-as="e" t-key="e.id">
+                                <option t-att-value="e.id" t-att-selected="e.id === state.employeeId">
+                                    <t t-esc="e.name"/>
+                                </option>
+                            </t>
+                        </select>
+                    </div>
+                    <div t-if="props.mode === 'salary_payment'">
+                        <div class="text-muted">Outstanding Advance: PKR <t t-esc="state.outstandingAdvance.toFixed(2)"/></div>
+                        <div t-if="state.outstandingAdvance > 0" class="mt-2">
+                            <label class="form-label fw-bold">Advance Offset</label>
+                            <input type="number" class="form-control" step="0.01" min="0"
+                                   t-att-max="state.outstandingAdvance"
+                                   t-model="state.advanceOffset" placeholder="0.00"/>
+                        </div>
+                        <div class="text-muted mt-1">Net cash to pay: PKR <t t-esc="netToPay.toFixed(2)"/></div>
                     </div>
                 </t>
                 <t t-if="props.mode !== 'transfer' and !isPartnerDestination">
@@ -127,19 +150,24 @@
             <hr/>
             <div>Date:    <t t-esc="date"/></div>
             <div>Cashier: <t t-esc="cashier"/></div>
-            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-elif="direction === 'transfer'">Pay Out (via Partner)</t><t t-elif="direction === 'internal_transfer'">Internal Transfer</t><t t-else="">Pay Out</t></div>
+            <div>Type:    <t t-if="direction === 'inbound'">Collect Payment</t><t t-elif="direction === 'drawing'">Partner Drawing</t><t t-elif="direction === 'transfer'">Pay Out (via Partner)</t><t t-elif="direction === 'internal_transfer'">Internal Transfer</t><t t-elif="direction === 'salary_advance'">Salary Advance</t><t t-elif="direction === 'salary_payment'">Pay Salary</t><t t-else="">Pay Out</t></div>
             <hr/>
-            <div t-if="direction !== 'internal_transfer'">Partner: <t t-esc="partner_name"/></div>
+            <div t-if="direction !== 'internal_transfer' and direction !== 'salary_advance' and direction !== 'salary_payment'">Partner: <t t-esc="partner_name"/></div>
             <div t-if="funding_partner_name">Funded By: <t t-esc="funding_partner_name"/></div>
             <div t-if="direction === 'internal_transfer'">From:    <t t-esc="from_journal_name"/></div>
             <div t-if="direction === 'internal_transfer'">To:      <t t-esc="to_journal_name"/></div>
-            <div>Amount:  PKR <t t-esc="amount"/></div>
+            <div t-if="direction === 'salary_advance' or direction === 'salary_payment'">Employee: <t t-esc="employee_name"/></div>
+            <div t-if="direction === 'salary_payment'">Gross:   PKR <t t-esc="gross_amount"/></div>
+            <div t-if="direction === 'salary_payment' and advance_offset">Advance Offset: PKR <t t-esc="advance_offset"/></div>
+            <div t-if="direction === 'salary_payment'">Net Paid: PKR <t t-esc="net_cash"/></div>
+            <div t-if="direction !== 'salary_payment'">Amount:  PKR <t t-esc="amount"/></div>
             <div t-if="memo">Memo:    <t t-esc="memo"/></div>
             <div>Ref:     <t t-esc="name"/></div>
             <hr/>
             <div t-if="direction === 'inbound'">Received by: ______________</div>
             <div t-elif="direction === 'drawing'">Withdrawn by: _____________</div>
             <div t-elif="direction === 'internal_transfer'">Processed by: ______________</div>
+            <div t-elif="direction === 'salary_advance' or direction === 'salary_payment'">Received by: ______________</div>
             <div t-else="">Paid to:     ______________</div>
         </div>
     </t>

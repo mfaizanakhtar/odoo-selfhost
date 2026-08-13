@@ -11,7 +11,7 @@ export class CashMovementModal extends Component {
     static template = "sfya_pos_cash_movement.CashMovementModal";
     static components = { Dialog };
     static props = {
-        mode: { type: String, validate: (v) => ["collect", "payout", "drawing", "transfer"].includes(v) },
+        mode: { type: String, validate: (v) => ["collect", "payout", "drawing", "transfer", "salary_advance", "salary_payment"].includes(v) },
         initialPartner: { type: Object, optional: true },
         close: Function,
     };
@@ -25,6 +25,10 @@ export class CashMovementModal extends Component {
             journals: [],
             fromJournalId: null,
             toJournalId: null,
+            employeeId: null,
+            employees: [],
+            advanceOffset: "0",
+            outstandingAdvance: 0,
             amount: "",
             memo: "",
             date: this._todayStr(),
@@ -57,6 +61,27 @@ export class CashMovementModal extends Component {
             } catch (e) {
                 this.state.error = e?.data?.message || e?.message || _t("Failed to load accounts.");
             }
+            if (this.props.mode === "salary_advance" || this.props.mode === "salary_payment") {
+                try {
+                    const employees = await this.pos.data.call(
+                        "pos.session",
+                        "get_sfya_pos_employees",
+                        [],
+                        { session_id: this.pos.session.id },
+                    );
+                    this.state.employees = employees || [];
+                    if (this.state.employees.length > 0) {
+                        this.state.employeeId = this.state.employees[0].id;
+                        if (this.props.mode === "salary_payment") {
+                            await this._fetchOutstandingAdvance();
+                        }
+                    } else if (!this.state.error) {
+                        this.state.error = _t("No employees configured for this company.");
+                    }
+                } catch (e) {
+                    this.state.error = e?.data?.message || e?.message || _t("Failed to load employees.");
+                }
+            }
         });
     }
 
@@ -64,6 +89,8 @@ export class CashMovementModal extends Component {
         if (this.props.mode === "collect") return _t("Collect Payment");
         if (this.props.mode === "drawing") return _t("Partner Drawing");
         if (this.props.mode === "transfer") return _t("Transfer Funds");
+        if (this.props.mode === "salary_advance") return _t("Salary Advance");
+        if (this.props.mode === "salary_payment") return _t("Pay Salary");
         return _t("Pay Out");
     }
 
@@ -71,6 +98,8 @@ export class CashMovementModal extends Component {
         if (this.props.mode === "collect") return _t("Collect");
         if (this.props.mode === "drawing") return _t("Record Drawing");
         if (this.props.mode === "transfer") return _t("Transfer");
+        if (this.props.mode === "salary_advance") return _t("Give Advance");
+        if (this.props.mode === "salary_payment") return _t("Pay Salary");
         return _t("Pay Out");
     }
 
@@ -78,6 +107,8 @@ export class CashMovementModal extends Component {
         if (this.props.mode === "collect") return "btn-success";
         if (this.props.mode === "drawing") return "btn-info";
         if (this.props.mode === "transfer") return "btn-primary";
+        if (this.props.mode === "salary_advance") return "btn-info";
+        if (this.props.mode === "salary_payment") return "btn-warning";
         return "btn-warning";
     }
 
@@ -101,6 +132,20 @@ export class CashMovementModal extends Component {
                 this.state.fromJournalId !== this.state.toJournalId
             );
         }
+        if (this.props.mode === "salary_advance") {
+            return !!this.state.employeeId && !!this.state.journal_id;
+        }
+        if (this.props.mode === "salary_payment") {
+            const offset = parseFloat(this.state.advanceOffset || 0);
+            return (
+                !!this.state.employeeId &&
+                !!this.state.journal_id &&
+                Number.isFinite(offset) &&
+                offset >= 0 &&
+                offset <= this.state.outstandingAdvance &&
+                offset <= amt
+            );
+        }
         if (!this.state.partner) {
             return false;
         }
@@ -119,6 +164,12 @@ export class CashMovementModal extends Component {
         const from = this.state.journals.find((x) => x.id === this.state.fromJournalId);
         const to = this.state.journals.find((x) => x.id === this.state.toJournalId);
         return from?.type === "bank" || to?.type === "bank";
+    }
+
+    get netToPay() {
+        const amt = parseFloat(this.state.amount) || 0;
+        const offset = parseFloat(this.state.advanceOffset) || 0;
+        return Math.max(0, amt - offset);
     }
 
     get todayStr() {
@@ -156,6 +207,28 @@ export class CashMovementModal extends Component {
         }
         this.state.fundingPartner = partner;
         this.state.error = "";
+    }
+
+    async _fetchOutstandingAdvance() {
+        try {
+            this.state.outstandingAdvance = await this.pos.data.call(
+                "account.payment",
+                "get_sfya_salary_advance_balance",
+                [],
+                { employee_id: this.state.employeeId },
+            );
+        } catch (e) {
+            this.state.outstandingAdvance = 0;
+        }
+    }
+
+    async onEmployeeChange(ev) {
+        this.state.employeeId = parseInt(ev.target.value, 10);
+        this.state.error = "";
+        if (this.props.mode === "salary_payment") {
+            this.state.advanceOffset = "0";
+            await this._fetchOutstandingAdvance();
+        }
     }
 
     async confirm() {
@@ -201,6 +274,91 @@ export class CashMovementModal extends Component {
                 this.props.close();
             } catch (e) {
                 this.state.error = e?.data?.message || e?.message || _t("Failed to record transfer.");
+                this.state.submitting = false;
+            }
+            return;
+        }
+
+        if (this.props.mode === "salary_advance") {
+            try {
+                const kwargs = {
+                    session_id: sessionId,
+                    employee_id: this.state.employeeId,
+                    amount,
+                    journal_id: this.state.journal_id,
+                    memo,
+                };
+                if (this.selectedJournalIsBank) kwargs.date = this.state.date;
+                const result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_salary_advance",
+                    [],
+                    kwargs,
+                );
+                this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
+                this.pos.sfyaCashMovements.push(result);
+                this.notification.add(
+                    _t("Advance of %s given to %s", result.amount, result.employee_name),
+                    { type: "success" },
+                );
+                if (this.state.print) {
+                    await this._printSlip({
+                        direction: "salary_advance",
+                        name: result.name,
+                        employee_name: result.employee_name,
+                        amount: result.amount,
+                        memo: result.memo,
+                    });
+                }
+                this.props.close();
+            } catch (e) {
+                this.state.error = e?.data?.message || e?.message || _t("Failed to record advance.");
+                this.state.submitting = false;
+            }
+            return;
+        }
+
+        if (this.props.mode === "salary_payment") {
+            try {
+                const advanceOffset = parseFloat(this.state.advanceOffset || 0);
+                const kwargs = {
+                    session_id: sessionId,
+                    employee_id: this.state.employeeId,
+                    gross_amount: amount,
+                    advance_offset: advanceOffset,
+                    journal_id: this.state.journal_id,
+                    memo,
+                };
+                if (this.selectedJournalIsBank) kwargs.date = this.state.date;
+                const result = await this.pos.data.call(
+                    "account.payment",
+                    "sfya_pos_salary_payment",
+                    [],
+                    kwargs,
+                );
+                this.pos.sfyaCashMovements = this.pos.sfyaCashMovements || [];
+                this.pos.sfyaCashMovements.push(result);
+                this.notification.add(
+                    result.advance_offset > 0
+                        ? _t("Paid %s salary to %s (net %s after %s advance offset)", result.gross_amount, result.employee_name, result.net_cash, result.advance_offset)
+                        : _t("Paid %s salary to %s", result.gross_amount, result.employee_name),
+                    { type: "success" },
+                );
+                if (this.state.print) {
+                    await this._printSlip({
+                        direction: "salary_payment",
+                        name: result.payment_name || result.move_name,
+                        employee_name: result.employee_name,
+                        amount: result.gross_amount,
+                        gross_amount: result.gross_amount,
+                        advance_offset: result.advance_offset,
+                        net_cash: result.net_cash,
+                        memo: result.memo,
+                    });
+                }
+                this.props.close();
+            } catch (e) {
+                this.state.error = e?.data?.message || e?.message || _t("Failed to record salary payment.");
                 this.state.submitting = false;
             }
             return;
@@ -332,6 +490,10 @@ export class CashMovementModal extends Component {
                     funding_partner_name: result.funding_partner_name || "",
                     from_journal_name: result.from_journal_name || "",
                     to_journal_name: result.to_journal_name || "",
+                    employee_name: result.employee_name || "",
+                    gross_amount: result.gross_amount || 0,
+                    advance_offset: result.advance_offset || 0,
+                    net_cash: result.net_cash != null ? result.net_cash : (result.amount || 0),
                     amount: result.amount,
                     memo: result.memo,
                     date: new Date().toLocaleString(),
