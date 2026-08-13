@@ -11,7 +11,7 @@
        t-inherit="point_of_sale.ClosePosPopup"
        t-inherit-mode="extension">
         <xpath expr="//hr" position="after">
-            <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.cash.drawings.length or sfya.banks.length or sfya.transfers.length or sfya.internalTransfers.length)"
+            <div t-if="sfya.loaded and (sfya.cash.collects.length or sfya.cash.payouts.length or sfya.cash.drawings.length or sfya.banks.length or sfya.transfers.length or sfya.internalTransfers.length or sfya.salaryPayments.length)"
                  class="o_sfya_cash_movements mt-2">
 
                 <div t-if="sfya.closeError" class="alert alert-danger mb-2" t-esc="sfya.closeError"/>
@@ -134,6 +134,45 @@
                                     <td><t t-esc="r.from_journal_name"/> <i class="fa fa-arrow-right mx-1"/> <t t-esc="r.to_journal_name"/></td>
                                     <td t-esc="r.memo"/>
                                     <td class="text-end" t-esc="r.amount.toFixed(2)"/>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Salary: advances + payments; net cash impact (if any) already folded into till math -->
+                <div t-if="sfya.salaryPayments.length" class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between fw-bold" style="cursor: pointer;"
+                         t-on-click="() => sfya.salaryPaymentsOpen = !sfya.salaryPaymentsOpen">
+                        <span>
+                            <i class="fa" t-att-class="sfya.salaryPaymentsOpen ? 'fa-chevron-down' : 'fa-chevron-right'"/>
+                            Salary
+                            <small class="text-muted ms-2">(till impact total)</small>
+                        </span>
+                        <span class="text-muted">
+                            <t t-esc="sfyaSalaryPaymentsTotal.toFixed(2)"/>
+                        </span>
+                    </div>
+                    <table t-if="sfya.salaryPaymentsOpen" class="table table-sm mb-0 mt-1">
+                        <thead>
+                            <tr class="text-muted">
+                                <th>Employee</th>
+                                <th>Kind</th>
+                                <th class="text-end">Gross</th>
+                                <th class="text-end">Offset</th>
+                                <th class="text-end">Net Cash</th>
+                                <th>Memo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="sfya.salaryPayments" t-as="r" t-key="r.kind + '-' + r.id">
+                                <tr>
+                                    <td t-esc="r.employee_name"/>
+                                    <td t-esc="r.kind === 'advance' ? 'Advance' : 'Payment'"/>
+                                    <td class="text-end" t-esc="r.gross_amount.toFixed(2)"/>
+                                    <td class="text-end" t-esc="r.advance_offset ? r.advance_offset.toFixed(2) : ''"/>
+                                    <td class="text-end" t-esc="r.net_cash.toFixed(2)"/>
+                                    <td t-esc="r.memo"/>
                                 </tr>
                             </t>
                         </tbody>
