@@ -37,6 +37,9 @@ class AccountMove(models.Model):
         string='Transfer Amount',
         copy=False,
     )
+    sfya_is_salary_offset = fields.Boolean(default=False, copy=False)
+    sfya_salary_offset_employee_id = fields.Many2one('hr.employee', copy=False)
+    sfya_salary_offset_amount = fields.Monetary(copy=False)
 
     @api.model
     def sfya_pos_partner_transfer(self, session_id, from_partner_id, to_partner_id, amount, memo='', date=None):
