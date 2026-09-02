@@ -69,17 +69,9 @@
                     <span>Discount</span>
                     <span>-<t t-esc="props.formatCurrency(props.data.total_discount)"/></span>
                 </div>
-                <div class="sfya-total-row sfya-grand">
-                    <span>Grand Total</span>
-                    <span t-esc="props.formatCurrency(props.data.amount_total)"/>
-                </div>
                 <div class="sfya-total-row">
-                    <span>Payment Received</span>
-                    <span t-esc="props.formatCurrency(props.data.paymentReceived)"/>
-                </div>
-                <div class="sfya-total-row" t-if="props.data.onCredit > 0">
-                    <span>On Credit (Customer A/c)</span>
-                    <span t-esc="props.formatCurrency(props.data.onCredit)"/>
+                    <span>Invoice Total</span>
+                    <span t-esc="props.formatCurrency(props.data.amount_total)"/>
                 </div>
                 <div class="sfya-total-row" t-if="props.data.prevDue > 0">
                     <span>Previous Balance</span>
@@ -88,6 +80,18 @@
                 <div class="sfya-total-row" t-if="props.data.advance > 0">
                     <span>Advance on Account</span>
                     <span t-esc="props.formatCurrency(props.data.advance)"/>
+                </div>
+                <div class="sfya-total-row sfya-grand">
+                    <span>Grand Total</span>
+                    <span t-esc="props.formatCurrency(props.data.grandTotalWithPrev)"/>
+                </div>
+                <div class="sfya-total-row">
+                    <span>Payment Received</span>
+                    <span t-esc="props.formatCurrency(props.data.paymentReceived)"/>
+                </div>
+                <div class="sfya-total-row" t-if="props.data.onCredit > 0">
+                    <span>On Credit (Customer A/c)</span>
+                    <span t-esc="props.formatCurrency(props.data.onCredit)"/>
                 </div>
                 <div class="sfya-separator"/>
                 <div class="sfya-total-row sfya-grand" t-if="props.data.changeDue > 0">

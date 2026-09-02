@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Receipt',
-    'version': '18.0.2.1.0',
+    'version': '18.0.2.1.1',
     'summary': 'SFYA-branded receipt layout for Point of Sale',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',

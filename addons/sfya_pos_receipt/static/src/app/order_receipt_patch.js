@@ -46,6 +46,7 @@ patch(PosOrder.prototype, {
         const advance = Math.max(0, -prevBalanceRaw);
         const balanceDue = Math.max(0, prevBalanceRaw + onCredit);
         const changeDue = Math.max(0, paymentReceived + onCredit - total);
+        const grandTotalWithPrev = total + prevBalanceRaw; // signed; negative = customer credit
 
         let dateOnly = "";
         let timeOnly = "";
@@ -87,6 +88,7 @@ patch(PosOrder.prototype, {
             advance,
             balanceDue,
             changeDue,
+            grandTotalWithPrev,
             invoiceNo: (this.pos_reference || "").replace(/^Order\s+/, "").trim(),
         };
     },
