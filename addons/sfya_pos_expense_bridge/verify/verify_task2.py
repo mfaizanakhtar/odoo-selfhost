@@ -24,7 +24,7 @@ try:
     })
     sheet.action_submit_sheet()
     sheet.action_approve_expense_sheets()
-    sheet.action_sheet_move_create()  # posts entries -> state done
+    sheet.action_sheet_move_post()  # posts entries -> state done
 
     print("sheet state:", sheet.state)                    # expect 'done'
     print("bank_move set:", bool(e.sfya_bank_move_id))     # expect True
