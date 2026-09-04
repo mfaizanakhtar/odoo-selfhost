@@ -7,17 +7,15 @@
         <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//div[@id='payment_mode']" position="after">
-                <label for="affects_pos_cash" string="POS Cash Drawer"/>
-                <div>
-                    <field name="affects_pos_cash"/>
-                    <span class="text-muted ms-1">
-                        Deduct this expense from the open POS session
-                    </span>
-                </div>
+                <field name="sfya_payment_source_journal_id"
+                       invisible="payment_mode != 'company_account'"
+                       required="payment_mode == 'company_account'"/>
                 <field name="pos_cash_pending" readonly="1"
                        invisible="not pos_cash_pending"/>
                 <field name="pos_cash_session_id" readonly="1"
                        invisible="not pos_cash_session_id"/>
+                <field name="sfya_bank_move_id" readonly="1"
+                       invisible="not sfya_bank_move_id"/>
             </xpath>
         </field>
     </record>
