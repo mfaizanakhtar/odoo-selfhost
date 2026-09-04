@@ -83,3 +83,64 @@ class HrExpense(models.Model):
                 and bool(pos_cash)
                 and rec.sfya_payment_source_journal_id == pos_cash
             )
+
+    def _sfya_create_bank_payment_move(self):
+        """Post a reconciled bank entry for a bank-routed company expense.
+
+        Dr <expense move's clearing account> / Cr <bank journal account>,
+        memo 'Expense: <name>', then reconcile the clearing leg against the
+        expense move's credit leg so nothing dangles. Idempotent.
+        """
+        self.ensure_one()
+        if self.sfya_bank_move_id:
+            return
+        journal = self.sfya_payment_source_journal_id
+        bank_account = journal.default_account_id
+        if not bank_account:
+            return
+
+        exp_line = self.env['account.move.line'].sudo().search([
+            ('expense_id', '=', self.id),
+            ('parent_state', '=', 'posted'),
+        ], limit=1)
+        exp_move = exp_line.move_id
+        if not exp_move:
+            return
+        clearing_line = exp_move.line_ids.filtered(
+            lambda l: l.credit > 0 and not l.reconciled
+        )[:1]
+        if not clearing_line:
+            return
+        clearing_account = clearing_line.account_id
+        amount = clearing_line.credit
+        memo = 'Expense: %s' % (self.name or '')
+        partner = self.employee_id.sudo().work_contact_id
+
+        pay_move = self.env['account.move'].sudo().create({
+            'journal_id': journal.id,
+            'date': fields.Date.context_today(self),
+            'ref': memo,
+            'line_ids': [
+                (0, 0, {
+                    'account_id': clearing_account.id,
+                    'debit': amount,
+                    'credit': 0.0,
+                    'name': memo,
+                }),
+                (0, 0, {
+                    'account_id': bank_account.id,
+                    'debit': 0.0,
+                    'credit': amount,
+                    'name': memo,
+                    'partner_id': partner.id if partner else False,
+                }),
+            ],
+        })
+        pay_move.action_post()
+
+        pay_clearing_line = pay_move.line_ids.filtered(
+            lambda l: l.account_id == clearing_account
+        )
+        (clearing_line + pay_clearing_line).reconcile()
+
+        self.sfya_bank_move_id = pay_move.id
