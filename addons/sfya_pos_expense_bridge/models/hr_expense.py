@@ -1,4 +1,6 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class HrExpense(models.Model):
@@ -97,7 +99,11 @@ class HrExpense(models.Model):
         journal = self.sfya_payment_source_journal_id
         bank_account = journal.default_account_id
         if not bank_account:
-            return
+            raise UserError(_(
+                "Bank journal '%s' has no default account configured, so "
+                "expense '%s' cannot be paid from it. Set the journal's bank "
+                "account or choose a different Payment Source."
+            ) % (journal.display_name, self.name or ''))
 
         exp_line = self.env['account.move.line'].sudo().search([
             ('expense_id', '=', self.id),
@@ -105,14 +111,31 @@ class HrExpense(models.Model):
         ], limit=1)
         exp_move = exp_line.move_id
         if not exp_move:
-            return
-        clearing_line = exp_move.line_ids.filtered(
+            raise UserError(_(
+                "No posted accounting entry found for expense '%s'; cannot "
+                "post its bank payment."
+            ) % (self.name or ''))
+
+        clearing_lines = exp_move.line_ids.filtered(
             lambda l: l.credit > 0 and not l.reconciled
-        )[:1]
-        if not clearing_line:
-            return
+        )
+        if len(clearing_lines) != 1:
+            raise UserError(_(
+                "Expected exactly one unreconciled payable line on the entry "
+                "for expense '%s', found %s. Its bank payment must be handled "
+                "manually."
+            ) % (self.name or '', len(clearing_lines)))
+        clearing_line = clearing_lines
         clearing_account = clearing_line.account_id
         amount = clearing_line.credit
+
+        currency = self.company_id.currency_id
+        if float_compare(amount, self.total_amount_currency,
+                         precision_rounding=currency.rounding) != 0:
+            raise UserError(_(
+                "Bank payment amount (%s) does not match expense total (%s) "
+                "for '%s'; refusing to post a mismatched bank entry."
+            ) % (amount, self.total_amount_currency, self.name or ''))
         memo = 'Expense: %s' % (self.name or '')
         partner = self.employee_id.sudo().work_contact_id
 
