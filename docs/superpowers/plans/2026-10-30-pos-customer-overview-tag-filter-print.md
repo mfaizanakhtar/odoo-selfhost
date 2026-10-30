@@ -134,7 +134,7 @@ Add a Print view button on both tabs and implement `printCurrentView()` with `wi
 
 - [ ] **Step 3: Add print-only styling and manifest entry**
 
-Create `customer_overview_print.scss` with `@media print` rules that show the report and hide the POS screen, dialog chrome, controls, and the non-selected tab. Add the stylesheet to `point_of_sale._assets_pos` and bump the manifest from `18.0.6.0.9` to `18.0.6.0.10`.
+Create `customer_overview_print.scss` with `@media print` rules that show the report and hide the POS screen, dialog chrome, controls, and the non-selected tab. Set the print page to A4 portrait with 12 mm margins, overriding the thermal-receipt page rule in `sfya_pos_receipt`. Add the stylesheet to `point_of_sale._assets_pos` and bump the manifest from `18.0.6.0.9` to `18.0.6.0.10`.
 
 - [ ] **Step 4: Review both print paths**
 

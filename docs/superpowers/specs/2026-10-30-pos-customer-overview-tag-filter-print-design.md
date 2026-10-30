@@ -72,6 +72,7 @@ Let POS staff view outstanding balances and collections for a group of customers
 - Exact RPC shape, tag lookup mechanism, and print rendering mechanism are implementation choices, provided the behavior above is met.
 - For a balance total, use the signed balance values already returned by the existing method; do not reinterpret or recompute them in the print layer.
 - Preserve the existing overview styling and POS conventions where they do not conflict with legible page printing.
+- Implementation call: format the browser printout for A4 portrait with 12 mm margins. The print dialog still lets the cashier choose the actual printer or Save as PDF.
 
 ## Review mockup
 
