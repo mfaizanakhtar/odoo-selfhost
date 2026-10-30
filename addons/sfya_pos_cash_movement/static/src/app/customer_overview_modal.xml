@@ -126,7 +126,50 @@
                     </div>
                 </div>
             </div>
+            <section t-if="canPrint" class="o_customer_overview_print">
+                <h1 t-if="state.tab === 'balances'">Customer Overview — Outstanding Balances</h1>
+                <h1 t-else="">Customer Overview — Recent Collections</h1>
+                <p>Customer Tag: <strong t-esc="appliedTagName"/></p>
+                <p t-if="state.tab === 'collections'">
+                    Period: <t t-esc="state.appliedDateFrom"/> to
+                    <t t-esc="state.appliedDateTo"/>
+                </p>
+                <p>Generated: <t t-esc="state.printGeneratedAt"/></p>
+                <table t-if="state.tab === 'balances'">
+                    <thead>
+                        <tr><th>Customer</th><th class="amount">Balance (PKR)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.balances" t-as="row" t-key="row.partner_id">
+                            <td t-esc="row.partner_name"/>
+                            <td class="amount" t-esc="row.balance.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                        </tr>
+                        <tr t-if="!state.balances.length"><td colspan="2">No outstanding balances</td></tr>
+                    </tbody>
+                </table>
+                <table t-else="">
+                    <thead>
+                        <tr><th>Date</th><th>Customer</th><th class="amount">Amount (PKR)</th><th>Source</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.collections" t-as="row" t-key="row.id">
+                            <td class="date" t-esc="row.date"/>
+                            <td t-esc="row.partner_name"/>
+                            <td class="amount" t-esc="row.amount.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                            <td t-esc="row.source"/>
+                        </tr>
+                        <tr t-if="!state.collections.length"><td colspan="4">No collections in this period</td></tr>
+                    </tbody>
+                </table>
+                <p class="total">
+                    Total of displayed rows (PKR):
+                    <strong t-esc="printTotal.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                </p>
+            </section>
             <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!canPrint" t-on-click="printCurrentView">
+                    <i class="fa fa-print"/> Print view
+                </button>
                 <button class="btn btn-secondary" t-on-click="() => props.close()">Close</button>
             </t>
         </Dialog>

@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, onWillUnmount } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
@@ -28,9 +28,12 @@ export class CustomerOverviewModal extends Component {
             dateTo: this._todayStr(),
             loading: true,
             error: "",
+            printGeneratedAt: new Date().toLocaleString(),
         });
         this._requestId = 0;
         this._tagsLoaded = false;
+        this._isUnmounted = false;
+        onWillUnmount(() => { this._isUnmounted = true; });
         onWillStart(() => this._loadAll());
     }
 
@@ -126,6 +129,39 @@ export class CustomerOverviewModal extends Component {
 
     setTab(tab) {
         this.state.tab = tab;
+    }
+
+    get appliedTagName() {
+        if (this.state.appliedTagId === null) return _t("All Customers");
+        return this.state.tagOptions.find((tag) => tag.id === this.state.appliedTagId)?.name;
+    }
+
+    get canPrint() {
+        if (this.state.loading || this.state.error || !this.appliedTagName ||
+            this.state.appliedTagId === undefined ||
+            this.state.selectedTagId !== this.state.appliedTagId) {
+            return false;
+        }
+        if (this.state.tab === "balances") return true;
+        return this.state.tab === "collections" &&
+            Boolean(this.state.appliedDateFrom && this.state.appliedDateTo) &&
+            this.state.dateFrom === this.state.appliedDateFrom &&
+            this.state.dateTo === this.state.appliedDateTo;
+    }
+
+    get printTotal() {
+        const isBalances = this.state.tab === "balances";
+        const rows = isBalances ? this.state.balances : this.state.collections;
+        return rows.reduce((total, row) => total + (isBalances ? row.balance : row.amount), 0);
+    }
+
+    async printCurrentView() {
+        if (this._isUnmounted || !this.canPrint) return;
+        this.state.printGeneratedAt = new Date().toLocaleString();
+        // Let OWL paint the timestamp before the browser snapshots the report.
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (this._isUnmounted || !this.canPrint) return;
+        window.print();
     }
 
     collectFromPartner(row) {
