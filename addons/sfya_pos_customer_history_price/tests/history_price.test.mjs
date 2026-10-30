@@ -201,3 +201,46 @@ test("no active pricelist sends explicit false and applies company-currency hist
     assert.equal(f.calls[0][3].pricelist_id, false);
     assert.equal(line.price_unit, 120);
 });
+
+test("pricelist hook replaces a pending lookup and ignores its stale response", async () => {
+    const first = deferred(); const second = deferred();
+    const f = fixture((model, method, args, kwargs) => kwargs.pricelist_id === 3 ? first.promise : second.promise);
+    const line = f.add();
+    class PosOrder {
+        set_pricelist(pricelist) { this.pricelist_id = pricelist; return "updated"; }
+    }
+    await loadPatch("pos_order_patch", { PosOrder });
+    Object.setPrototypeOf(f.order, PosOrder.prototype);
+    f.order.models = { "pos.order": { _sfyaPosStore: f.pos } };
+    const old = apply(f.pos, f.order); await Promise.resolve();
+    assert.equal(f.order.set_pricelist({ id: 4 }), "updated");
+    const current = f.order._sfyaPricePromise;
+    assert.notEqual(current, old);
+    await Promise.resolve();
+    second.resolve({ "11": 160 }); await current;
+    first.resolve({ "11": 120 }); await old;
+    assert.equal(line.price_unit, 160);
+    assert.deepEqual(f.calls.map((call) => call[3].pricelist_id), [3, 4]);
+});
+
+test("deferred synchronization evicts only completed successfully uploaded orders", async () => {
+    let price = 120; const f = fixture(async () => ({ "11": price })); const line = f.add();
+    await apply(f.pos, f.order);
+    f.order.state = "paid"; f.order.id = "temporary";
+    class PosStore {
+        async postSyncAllOrders(orders) { this.postCalls = (this.postCalls || 0) + 1; return "done"; }
+        async upload(orders, fail) { if (fail) throw new Error("offline"); return this.postSyncAllOrders(orders); }
+    }
+    await loadPatch("pos_store_patch", { PosStore });
+    Object.setPrototypeOf(f.pos, PosStore.prototype);
+    await assert.rejects(f.pos.upload([f.order], true), /offline/);
+    assert.equal(f.pos._sfyaHistoryPriceCache.size, 1);
+    const draft = { ...f.order, state: "draft" };
+    assert.equal(await f.pos.upload([draft], false), "done");
+    assert.equal(f.pos._sfyaHistoryPriceCache.size, 1);
+    const uploaded = { ...f.order, id: 99 };
+    assert.equal(await f.pos.upload([uploaded], false), "done");
+    assert.equal(f.pos._sfyaHistoryPriceCache.size, 0);
+    f.order.state = "draft"; price = 180;
+    await apply(f.pos, f.order); assert.equal(line.price_unit, 180);
+});
