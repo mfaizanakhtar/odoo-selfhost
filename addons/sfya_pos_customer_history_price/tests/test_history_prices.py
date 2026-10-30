@@ -212,6 +212,26 @@ class TestCustomerHistoryPrices(TestPoSCommon):
         self._invoice(12, currency=usd, uom=self.env.ref('uom.product_uom_dozen'))
         self.assertEqual(self._prices(pricelist=pricelist), {str(self.product.id): 280.0})
 
+    def test_no_pricelist_uses_company_currency_at_source_date(self):
+        source_currency = self.other_currency
+        self.assertNotEqual(source_currency, self.company.currency_id)
+        self.env['res.currency.rate'].create([
+            {'currency_id': self.company.currency_id.id, 'company_id': self.company.id,
+             'name': '2026-10-01', 'rate': 1},
+            {'currency_id': source_currency.id, 'company_id': self.company.id,
+             'name': '2026-10-01', 'rate': 2},
+            {'currency_id': source_currency.id, 'company_id': self.company.id,
+             'name': '2026-10-03', 'rate': 4},
+        ])
+        self._invoice(24, currency=source_currency,
+                      uom=self.env.ref('uom.product_uom_dozen'))
+        without_history = self.env['product.product'].create({'name': 'No-pricelist unsold'})
+        self.assertEqual(
+            self.env['res.partner'].get_pos_customer_history_prices(
+                self.customer.id, (self.product | without_history).ids, False,
+            ), {str(self.product.id): 1.0},
+        )
+
     def test_missing_history_is_omitted(self):
         other = self.env['product.product'].create({'name': 'No history'})
         self._pos(100)
@@ -232,6 +252,11 @@ class TestCustomerHistoryPrices(TestPoSCommon):
             (self.customer.id, [True], self.currency_pricelist.id),
             (self.customer.id, [0], self.currency_pricelist.id),
             (self.customer.id, self.product.ids, -1),
+            (self.customer.id, self.product.ids, True),
+            (self.customer.id, self.product.ids, 0),
+            (self.customer.id, self.product.ids, None),
+            (self.customer.id, self.product.ids, '1'),
+            (self.customer.id, self.product.ids, 1.0),
         ):
             with self.subTest(partner=partner, products=products, pricelist=pricelist):
                 with self.assertRaises(ValidationError):
@@ -245,6 +270,8 @@ class TestCustomerHistoryPrices(TestPoSCommon):
             (foreign_partner.id, self.product.ids, self.currency_pricelist.id),
             (self.customer.id, foreign_product.ids, self.currency_pricelist.id),
             (self.customer.id, self.product.ids, foreign_pricelist.id),
+            (foreign_partner.id, self.product.ids, False),
+            (self.customer.id, foreign_product.ids, False),
             (2147483647, self.product.ids, self.currency_pricelist.id),
         ):
             with self.subTest(partner=partner, products=products, pricelist=pricelist):

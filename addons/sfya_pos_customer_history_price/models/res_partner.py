@@ -14,6 +14,7 @@ class ResPartner(models.Model):
         Accounting history is deliberately read with elevated access because a
         cashier cannot read standalone invoices. Validate every requested record
         under the caller's access rules first, and return only requested prices.
+        An explicit False pricelist uses the active company's POS currency.
         """
         if not self.env.user.has_group('point_of_sale.group_pos_user'):
             raise AccessError(_('Only Point of Sale users can look up customer prices.'))
@@ -23,7 +24,7 @@ class ResPartner(models.Model):
 
         if (
             not valid_id(partner_id)
-            or not valid_id(pricelist_id)
+            or (pricelist_id is not False and not valid_id(pricelist_id))
             or not isinstance(product_ids, list)
             or any(not valid_id(product_id) for product_id in product_ids)
         ):
@@ -34,16 +35,24 @@ class ResPartner(models.Model):
         partner = self.env['res.partner'].search(
             [('id', '=', partner_id)] + company_domain, limit=1,
         )
-        pricelist = self.env['product.pricelist'].search(
-            [('id', '=', pricelist_id)] + company_domain, limit=1,
-        )
+        pricelist = self.env['product.pricelist']
+        if pricelist_id is not False:
+            pricelist = pricelist.search(
+                [('id', '=', pricelist_id)] + company_domain, limit=1,
+            )
         products = self.env['product.product'].search(
             [('id', 'in', list(set(product_ids)))] + company_domain,
         )
-        if not partner or not pricelist or set(products.ids) != set(product_ids):
+        if (
+            not partner
+            or (pricelist_id is not False and not pricelist)
+            or set(products.ids) != set(product_ids)
+        ):
             raise AccessError(_('The requested customer, products, or pricelist are unavailable.'))
         if not products:
             return {}
+
+        target_currency = pricelist.currency_id if pricelist else company.currency_id
 
         # Never use the cashier's timezone to decide the company's business day.
         company_clock = self.with_context(tz=company.partner_id.tz or 'UTC')
@@ -94,6 +103,6 @@ class ResPartner(models.Model):
                 line.price_unit, products_by_id[product_id].uom_id,
             )
             prices[str(product_id)] = line.currency_id._convert(
-                price, pricelist.currency_id, company, business_date, round=False,
+                price, target_currency, company, business_date, round=False,
             )
         return prices
