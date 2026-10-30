@@ -179,13 +179,17 @@ class TestCustomerHistoryPrices(TestPoSCommon):
         self._created_at(pos.lines, '2026-10-01 10:00:00')
         self._assert_price(115)  # line ID breaks equal creation timestamps.
         self._created_at(second, '2026-10-01 09:00:00')
-        self._assert_price(100)  # line creation time takes precedence over ID.
+        self._assert_price(115)  # Higher line ID wins even with an older timestamp.
         invoice = self._invoice(1200, state='draft',
                                 uom=self.env.ref('uom.product_uom_dozen'))
-        invoice.invoice_line_ids.copy({'move_id': invoice.id, 'price_unit': 1380})
+        second_invoice_line = invoice.invoice_line_ids.copy({
+            'move_id': invoice.id, 'price_unit': 1380,
+        })
         invoice.action_post()
         self._created_at(invoice.invoice_line_ids, '2026-10-02 10:00:00')
         self._assert_price(115)
+        self._created_at(second_invoice_line, '2026-10-02 09:00:00')
+        self._assert_price(115)  # Invoice ties also use line ID after normalization.
 
     def test_unit_and_currency_are_converted(self):
         usd = self.env.ref('base.USD')
@@ -264,6 +268,21 @@ class TestCustomerHistoryPrices(TestPoSCommon):
             self.env['res.partner'].with_user(cashier).get_pos_customer_history_prices(
                 self.customer.id, self.product.ids, self.currency_pricelist.id,
             ), {str(self.product.id): 125.0},
+        )
+        self._pos(150, '2026-10-03 10:00:00')
+        hidden = self._pos(400, '2026-10-04 10:00:00')
+        self.env['ir.rule'].sudo().create({
+            'name': 'Hide one POS history line from the cashier',
+            'model_id': self.env.ref('point_of_sale.model_pos_order_line').id,
+            'domain_force': str([('id', '!=', hidden.lines.id)]),
+            'perm_read': True, 'perm_write': False,
+            'perm_create': False, 'perm_unlink': False,
+        })
+        self.assertFalse(hidden.lines.with_user(cashier).has_access('read'))
+        self.assertEqual(
+            self.env['res.partner'].with_user(cashier).get_pos_customer_history_prices(
+                self.customer.id, self.product.ids, self.currency_pricelist.id,
+            ), {str(self.product.id): 150.0},
         )
         internal_user = cashier.copy({
             'name': 'History non-POS user', 'login': 'history_internal',

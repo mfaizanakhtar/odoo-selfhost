@@ -52,14 +52,13 @@ class ResPartner(models.Model):
         def consider(line, source, business_date):
             key = (
                 business_date, source.create_date or datetime.min,
-                source._name, source.id,
-                line.create_date or datetime.min, line.id,
+                source._name, source.id, line.id,
             )
             product_id = line.product_id.id
             if product_id not in winners or key > winners[product_id][0]:
                 winners[product_id] = (key, line, business_date)
 
-        pos_lines = self.env['pos.order.line'].sudo().search([
+        pos_lines = self.env['pos.order.line'].search([
             ('company_id', '=', company.id),
             ('order_id.partner_id', '=', partner.id),
             ('order_id.state', 'in', ['paid', 'done', 'invoiced']),
