@@ -1,4 +1,5 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class ResPartner(models.Model):
@@ -16,8 +17,29 @@ class ResPartner(models.Model):
         return fields
 
     @api.model
-    def get_customer_balances(self):
+    def get_customer_overview_tags(self):
+        """Return the existing Contact Tags available in this POS context."""
+        return [
+            {'id': tag.id, 'name': tag.name}
+            for tag in self.env['res.partner.category'].search([], order='name, id')
+        ]
+
+    @api.model
+    def _validate_customer_overview_tag(self, tag_id):
+        """Resolve an optional tag without silently widening invalid filters."""
+        if tag_id is None or tag_id is False or tag_id == '':
+            return None
+        if type(tag_id) is not int or tag_id <= 0:
+            raise UserError(_('Invalid customer tag. Please select an existing Contact Tag.'))
+        tag = self.env['res.partner.category'].search([('id', '=', tag_id)], limit=1)
+        if not tag:
+            raise UserError(_('Customer tag is no longer available. Please select another Contact Tag.'))
+        return tag.id
+
+    @api.model
+    def get_customer_balances(self, tag_id=None):
         """Return partners with non-zero net balance (AR - AP) for POS overview."""
+        tag_id = self._validate_customer_overview_tag(tag_id)
         self.env.cr.execute("""
             SELECT
                 aml.partner_id,
@@ -35,7 +57,17 @@ class ResPartner(models.Model):
             HAVING ABS(SUM(aml.debit) - SUM(aml.credit)) > 0.005
             ORDER BY balance DESC
         """, (self.env.company.id,))
+        rows = self.env.cr.fetchall()
+        if tag_id is not None:
+            # Keep archived balance partners and the existing SQL visibility.
+            matching_partner_ids = set(self.sudo().with_context(active_test=False).search([
+                ('id', 'in', [row[0] for row in rows]),
+                '|',
+                ('category_id', 'in', [tag_id]),
+                ('commercial_partner_id.category_id', 'in', [tag_id]),
+            ]).ids)
+            rows = [row for row in rows if row[0] in matching_partner_ids]
         return [
             {'partner_id': r[0], 'partner_name': r[1], 'balance': round(r[2], 2)}
-            for r in self.env.cr.fetchall()
+            for r in rows
         ]

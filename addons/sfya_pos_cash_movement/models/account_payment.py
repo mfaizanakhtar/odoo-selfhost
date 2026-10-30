@@ -462,27 +462,36 @@ class AccountPayment(models.Model):
         return None
 
     @api.model
-    def get_recent_collections(self, date_from, date_to):
+    def get_recent_collections(self, date_from, date_to, tag_id=None):
         """Return inbound payments in date range for POS overview.
 
         Not filtered by partner_type: a dual-role partner's inbound
         payment can resolve to 'supplier' (e.g. a vendor returning cash
         to us), and that's still cash collected worth showing here.
         """
+        tag_id = self.env['res.partner']._validate_customer_overview_tag(tag_id)
         try:
             d_from = fields.Date.from_string(date_from)
             d_to = fields.Date.from_string(date_to)
         except (ValueError, TypeError):
             raise UserError(_("Invalid date format."))
-        payments = self.sudo().search([
+        domain = [
             ('payment_type', '=', 'inbound'),
             ('state', 'in', ['posted', 'paid', 'in_process']),
             ('date', '>=', d_from),
             ('date', '<=', d_to),
             ('company_id', '=', self.env.company.id),
-        ], order='date desc, id desc', limit=500)
+        ]
+        if tag_id is not None:
+            domain += [
+                '|',
+                ('partner_id.category_id', 'in', [tag_id]),
+                ('partner_id.commercial_partner_id.category_id', 'in', [tag_id]),
+            ]
+        payments = self.sudo().search(domain, order='date desc, id desc', limit=500)
         return [{
             'id': p.id,
+            'partner_id': p.partner_id.id or None,
             'date': p.date.strftime('%d-%m-%Y'),
             'partner_name': p.partner_id.name or '',
             'amount': p.amount,

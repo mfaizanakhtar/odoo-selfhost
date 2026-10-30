@@ -1,6 +1,6 @@
 {
     'name': 'SFYA POS Cash Movement',
-    'version': '18.0.6.0.9',
+    'version': '18.0.6.0.10',
     'summary': 'Collect Payment, Pay Out, Partner Drawing & Customer Overview on POS',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
@@ -17,6 +17,7 @@
             'sfya_pos_cash_movement/static/src/app/cash_movement_modal.xml',
             'sfya_pos_cash_movement/static/src/app/customer_overview_modal.js',
             'sfya_pos_cash_movement/static/src/app/customer_overview_modal.xml',
+            'sfya_pos_cash_movement/static/src/app/customer_overview_print.scss',
             'sfya_pos_cash_movement/static/src/app/product_screen_buttons.js',
             'sfya_pos_cash_movement/static/src/app/product_screen_buttons.xml',
             'sfya_pos_cash_movement/static/src/app/closing_dialog_patch.js',

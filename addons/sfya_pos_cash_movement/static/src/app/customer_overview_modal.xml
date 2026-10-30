@@ -4,6 +4,19 @@
     <t t-name="sfya_pos_cash_movement.CustomerOverviewModal">
         <Dialog title="'Customer Overview'" size="'lg'">
             <div class="o_customer_overview d-flex flex-column" style="min-height: 400px;">
+                <!-- Shared customer filter -->
+                <div class="mb-3">
+                    <label for="customer-overview-tag" class="form-label mb-1">Customer Tag</label>
+                    <select id="customer-overview-tag" class="form-select"
+                            t-on-change="onTagChange">
+                        <option value="" t-att-selected="state.selectedTagId === null">All Customers</option>
+                        <t t-foreach="state.tagOptions" t-as="tag" t-key="tag.id">
+                            <option t-att-value="tag.id" t-att-selected="tag.id === state.selectedTagId"
+                                    t-esc="tag.name"/>
+                        </t>
+                    </select>
+                </div>
+
                 <!-- Tabs -->
                 <ul class="nav nav-tabs mb-3">
                     <li class="nav-item">
@@ -26,8 +39,11 @@
                 </div>
 
                 <!-- Error -->
-                <div t-elif="state.error" class="alert alert-danger py-1 px-2 mb-2"
-                     t-esc="state.error"/>
+                <div t-elif="state.error" class="alert alert-danger py-1 px-2 mb-2">
+                    <span t-esc="state.error"/>
+                    <button class="btn btn-sm btn-outline-danger ms-2"
+                            t-on-click="() => this._loadAll()">Retry</button>
+                </div>
 
                 <!-- Balances Tab -->
                 <div t-elif="state.tab === 'balances'" class="flex-grow-1 overflow-auto">
@@ -73,6 +89,11 @@
                             <i class="fa fa-refresh"/> Refresh
                         </button>
                     </div>
+                    <div t-if="state.dateFrom !== state.appliedDateFrom || state.dateTo !== state.appliedDateTo"
+                         class="text-muted small mb-2">
+                        Showing collections from <t t-esc="state.appliedDateFrom"/> to
+                        <t t-esc="state.appliedDateTo"/>. Use Refresh to apply the edited dates.
+                    </div>
                     <div class="overflow-auto flex-grow-1">
                         <table t-if="state.collections.length" class="table table-sm mb-0">
                             <thead class="table-light">
@@ -105,7 +126,50 @@
                     </div>
                 </div>
             </div>
+            <section t-if="canPrint" class="o_customer_overview_print">
+                <h1 t-if="state.tab === 'balances'">Customer Overview — Outstanding Balances</h1>
+                <h1 t-else="">Customer Overview — Recent Collections</h1>
+                <p>Customer Tag: <strong t-esc="appliedTagName"/></p>
+                <p t-if="state.tab === 'collections'">
+                    Period: <t t-esc="state.appliedDateFrom"/> to
+                    <t t-esc="state.appliedDateTo"/>
+                </p>
+                <p>Generated: <t t-esc="state.printGeneratedAt"/></p>
+                <table t-if="state.tab === 'balances'">
+                    <thead>
+                        <tr><th>Customer</th><th class="amount">Balance (PKR)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.balances" t-as="row" t-key="row.partner_id">
+                            <td t-esc="row.partner_name"/>
+                            <td class="amount" t-esc="row.balance.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                        </tr>
+                        <tr t-if="!state.balances.length"><td colspan="2">No outstanding balances</td></tr>
+                    </tbody>
+                </table>
+                <table t-else="">
+                    <thead>
+                        <tr><th>Date</th><th>Customer</th><th class="amount">Amount (PKR)</th><th>Source</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="state.collections" t-as="row" t-key="row.id">
+                            <td class="date" t-esc="row.date"/>
+                            <td t-esc="row.partner_name"/>
+                            <td class="amount" t-esc="row.amount.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                            <td t-esc="row.source"/>
+                        </tr>
+                        <tr t-if="!state.collections.length"><td colspan="4">No collections in this period</td></tr>
+                    </tbody>
+                </table>
+                <p class="total">
+                    Total of displayed rows (PKR):
+                    <strong t-esc="printTotal.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                </p>
+            </section>
             <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!canPrint" t-on-click="printCurrentView">
+                    <i class="fa fa-print"/> Print view
+                </button>
                 <button class="btn btn-secondary" t-on-click="() => props.close()">Close</button>
             </t>
         </Dialog>

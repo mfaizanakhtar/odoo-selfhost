@@ -1,0 +1,107 @@
+// Keep this separate from .pos-receipt so thermal widths never apply.
+.o_customer_overview_print {
+    display: none;
+}
+
+// A named page beats the receipt addon's unnamed @page margin rule,
+// regardless of asset order. Only the overview report uses this page.
+@page sfya-customer-overview {
+    size: A4 portrait;
+    margin: 12mm !important;
+}
+
+@media print {
+    html:has(.o_customer_overview_print),
+    body:has(.o_customer_overview_print) {
+        height: auto !important;
+        overflow: visible !important;
+        page: sfya-customer-overview;
+    }
+
+    body:has(.o_customer_overview_print) {
+        // Remove every branch outside the report, including the POS screen,
+        // receipt render container, dialog header/footer, and backdrops.
+        *:not(:has(.o_customer_overview_print)):not(.o_customer_overview_print):not(.o_customer_overview_print *) {
+            display: none !important;
+        }
+
+        // Keep only the report's ancestor path. Undo modal positioning and
+        // scroll constraints so long reports paginate instead of clipping.
+        *:has(.o_customer_overview_print),
+        .o_customer_overview_print {
+            display: block !important;
+            position: static !important;
+            width: auto !important;
+            min-width: 0 !important;
+            max-width: none !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            transform: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            background: white !important;
+            page: sfya-customer-overview;
+        }
+
+        .o_customer_overview_print {
+            color: black;
+            font: 11pt/1.4 Arial, sans-serif;
+
+            * {
+                visibility: visible !important;
+            }
+
+            h1 {
+                margin: 0 0 6mm;
+                font-size: 18pt;
+            }
+
+            p {
+                margin: 0 0 3mm;
+            }
+
+            table {
+                width: 100%;
+                margin-top: 6mm;
+                border-collapse: collapse;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tr {
+                break-inside: avoid;
+            }
+
+            th, td {
+                padding: 2mm;
+                border-bottom: 1px solid #aaa;
+                text-align: left;
+                vertical-align: top;
+                overflow-wrap: anywhere;
+            }
+
+            .amount {
+                text-align: right;
+                white-space: nowrap;
+            }
+
+            .date {
+                white-space: nowrap;
+            }
+
+            .total {
+                margin-top: 5mm;
+                text-align: right;
+                break-inside: avoid;
+            }
+        }
+    }
+}

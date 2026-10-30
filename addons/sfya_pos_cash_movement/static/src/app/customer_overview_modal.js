@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, onWillStart, onWillUnmount } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
@@ -19,11 +19,21 @@ export class CustomerOverviewModal extends Component {
             tab: "balances",
             balances: [],
             collections: [],
+            tagOptions: [],
+            selectedTagId: null,
+            appliedTagId: undefined,
+            appliedDateFrom: null,
+            appliedDateTo: null,
             dateFrom: this._defaultFrom(),
             dateTo: this._todayStr(),
             loading: true,
             error: "",
+            printGeneratedAt: new Date().toLocaleString(),
         });
+        this._requestId = 0;
+        this._tagsLoaded = false;
+        this._isUnmounted = false;
+        onWillUnmount(() => { this._isUnmounted = true; });
         onWillStart(() => this._loadAll());
     }
 
@@ -39,40 +49,119 @@ export class CustomerOverviewModal extends Component {
     }
 
     async _loadAll() {
+        const requestId = ++this._requestId;
+        const tagId = this.state.selectedTagId;
+        const dateFrom = this.state.dateFrom;
+        const dateTo = this.state.dateTo;
         this.state.loading = true;
         this.state.error = "";
         try {
-            const [balances, collections] = await Promise.all([
-                this.pos.data.call("res.partner", "get_customer_balances", []),
-                this.pos.data.call("account.payment", "get_recent_collections", [], {
-                    date_from: this.state.dateFrom,
-                    date_to: this.state.dateTo,
+            const [balances, collections, tagOptions] = await Promise.all([
+                this.pos.data.call("res.partner", "get_customer_balances", [], {
+                    tag_id: tagId,
                 }),
+                this.pos.data.call("account.payment", "get_recent_collections", [], {
+                    date_from: dateFrom,
+                    date_to: dateTo,
+                    tag_id: tagId,
+                }),
+                this._tagsLoaded
+                    ? Promise.resolve(this.state.tagOptions)
+                    : this.pos.data.call("res.partner", "get_customer_overview_tags", []),
             ]);
+            if (requestId !== this._requestId) return;
             this.state.balances = balances || [];
             this.state.collections = collections || [];
+            this.state.tagOptions = tagOptions || [];
+            this._tagsLoaded = true;
+            this.state.appliedTagId = tagId;
+            this.state.appliedDateFrom = dateFrom;
+            this.state.appliedDateTo = dateTo;
         } catch (e) {
+            if (requestId !== this._requestId) return;
+            this.state.balances = [];
+            this.state.collections = [];
+            this.state.appliedTagId = undefined;
+            this.state.appliedDateFrom = null;
+            this.state.appliedDateTo = null;
             this.state.error = e?.data?.message || e?.message || _t("Failed to load data.");
+        } finally {
+            if (requestId === this._requestId) this.state.loading = false;
         }
-        this.state.loading = false;
+    }
+
+    async onTagChange(event) {
+        const value = event.target.value;
+        this.state.selectedTagId = value ? Number(value) : null;
+        await this._loadAll();
     }
 
     async refreshCollections() {
+        // Recover both datasets if the selected tag has not loaded successfully.
+        if (this.state.selectedTagId !== this.state.appliedTagId) {
+            return this._loadAll();
+        }
+        const requestId = ++this._requestId;
+        const tagId = this.state.selectedTagId;
+        const dateFrom = this.state.dateFrom;
+        const dateTo = this.state.dateTo;
         this.state.loading = true;
         this.state.error = "";
         try {
-            this.state.collections = await this.pos.data.call(
+            const collections = await this.pos.data.call(
                 "account.payment", "get_recent_collections", [],
-                { date_from: this.state.dateFrom, date_to: this.state.dateTo },
-            ) || [];
+                { date_from: dateFrom, date_to: dateTo, tag_id: tagId },
+            );
+            if (requestId !== this._requestId) return;
+            this.state.collections = collections || [];
+            this.state.appliedDateFrom = dateFrom;
+            this.state.appliedDateTo = dateTo;
         } catch (e) {
+            if (requestId !== this._requestId) return;
+            this.state.collections = [];
+            this.state.appliedDateFrom = null;
+            this.state.appliedDateTo = null;
             this.state.error = e?.data?.message || e?.message || _t("Failed to load collections.");
+        } finally {
+            if (requestId === this._requestId) this.state.loading = false;
         }
-        this.state.loading = false;
     }
 
     setTab(tab) {
         this.state.tab = tab;
+    }
+
+    get appliedTagName() {
+        if (this.state.appliedTagId === null) return _t("All Customers");
+        return this.state.tagOptions.find((tag) => tag.id === this.state.appliedTagId)?.name;
+    }
+
+    get canPrint() {
+        if (this.state.loading || this.state.error || !this.appliedTagName ||
+            this.state.appliedTagId === undefined ||
+            this.state.selectedTagId !== this.state.appliedTagId) {
+            return false;
+        }
+        if (this.state.tab === "balances") return true;
+        return this.state.tab === "collections" &&
+            Boolean(this.state.appliedDateFrom && this.state.appliedDateTo) &&
+            this.state.dateFrom === this.state.appliedDateFrom &&
+            this.state.dateTo === this.state.appliedDateTo;
+    }
+
+    get printTotal() {
+        const isBalances = this.state.tab === "balances";
+        const rows = isBalances ? this.state.balances : this.state.collections;
+        return rows.reduce((total, row) => total + (isBalances ? row.balance : row.amount), 0);
+    }
+
+    async printCurrentView() {
+        if (this._isUnmounted || !this.canPrint) return;
+        this.state.printGeneratedAt = new Date().toLocaleString();
+        // Let OWL paint the timestamp before the browser snapshots the report.
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        if (this._isUnmounted || !this.canPrint) return;
+        window.print();
     }
 
     collectFromPartner(row) {
