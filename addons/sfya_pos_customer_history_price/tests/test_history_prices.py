@@ -179,7 +179,7 @@ class TestCustomerHistoryPrices(TestPoSCommon):
         self._created_at(pos.lines, '2026-10-01 10:00:00')
         self._assert_price(115)  # line ID breaks equal creation timestamps.
         self._created_at(second, '2026-10-01 09:00:00')
-        self._assert_price(115)  # Higher line ID wins even with an older timestamp.
+        self._assert_price(100)  # Later creation wins despite the lower line ID.
         invoice = self._invoice(1200, state='draft',
                                 uom=self.env.ref('uom.product_uom_dozen'))
         second_invoice_line = invoice.invoice_line_ids.copy({
@@ -189,7 +189,7 @@ class TestCustomerHistoryPrices(TestPoSCommon):
         self._created_at(invoice.invoice_line_ids, '2026-10-02 10:00:00')
         self._assert_price(115)
         self._created_at(second_invoice_line, '2026-10-02 09:00:00')
-        self._assert_price(115)  # Invoice ties also use line ID after normalization.
+        self._assert_price(100)  # Later invoice-line creation wins after normalization.
 
     def test_unit_and_currency_are_converted(self):
         usd = self.env.ref('base.USD')

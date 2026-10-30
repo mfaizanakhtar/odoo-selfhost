@@ -59,9 +59,11 @@ class ResPartner(models.Model):
         winners = {}
 
         def consider(line, source, business_date):
+            # Line timestamps break ties only within the same source transaction.
             key = (
                 business_date, source.create_date or datetime.min,
-                source._name, source.id, line.id,
+                source._name, source.id,
+                line.create_date or datetime.min, line.id,
             )
             product_id = line.product_id.id
             if product_id not in winners or key > winners[product_id][0]:
