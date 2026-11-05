@@ -3,6 +3,10 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "docs/**"
+      - "scripts/mcp-odoo.sh"
   workflow_dispatch:
 
 permissions:

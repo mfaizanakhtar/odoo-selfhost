@@ -2,6 +2,10 @@
 
 > Self-hosted Odoo 18 Community for SFYA Enterprises. Single VPS (Hetzner), reproducible from git.
 
+## Personal AI VPS development access
+
+The AI development VPS now uses Infisical-backed Odoo and operations tools. See the [README](../README.md) for checkout location, Discord usage, terminal commands, credential ownership, and rotation boundaries. Production remains the separate `odoo-prod` server described below. The Mac checkout remains available.
+
 ---
 
 ## TL;DR — Is my code safe?
@@ -65,7 +69,7 @@ What is **NOT** in git (must be backed up separately):
 └─────────────────────┬────────────────────────────────────┘
                       │ HTTPS (Caddy auto-TLS)
                       ▼
-            https://odoo.edashlytic.com
+            https://odoo.alogy.pk
 ```
 
 ---
@@ -194,7 +198,7 @@ That's it. Nothing missing — all addons, infra, docs are versioned.
 
 1. Provision new Hetzner box, SSH as a user with docker installed.
 2. Update GitHub Actions secrets: `SSH_HOST` to the new IP, regenerate `DEPLOY_SSH_KEY` if needed.
-3. Point DNS (`odoo.edashlytic.com`) at the new IP.
+3. Point DNS (`odoo.alogy.pk`) at the new IP.
 4. Restore the latest Postgres dump:
    ```
    scp odoo-pre-deploy-<latest>.dump deploy@<new-ip>:~/
@@ -283,7 +287,7 @@ Empty output = our inherit xpaths still target valid nodes.
 | Filestore (attachments)          | Docker volume `odoo-stack_odoo-web-data` on VPS                         |
 | TLS certs                        | Docker volume `odoo-stack_caddy-data` on VPS (auto-renewed by Caddy)    |
 | Pre-deploy DB backups (last 7)   | `~/odoo-pre-deploy-*.dump` on VPS                                       |
-| Domain                           | `odoo.edashlytic.com` → Hetzner VPS IP (DNS, manually managed)          |
+| Domain                           | `odoo.alogy.pk` → Hetzner VPS IP (DNS, manually managed)          |
 | Custom addon source              | `addons/sfya_pos_receipt/` (in this repo)                               |
 | Vendored OCA addons              | `addons/oca/` (in this repo)                                            |
 | Upstream Odoo source (reference) | `addons/sfya_pos_receipt/vendor/upstream/` (snapshots, NOT loaded)      |
