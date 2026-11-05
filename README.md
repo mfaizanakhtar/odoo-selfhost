@@ -2,7 +2,7 @@
 
 Odoo 18 Community for SFYA Enterprises. Custom addons, Docker infrastructure, and deployment automation live in this repository.
 
-Production: **https://odoo.edashlytic.com**. Production server: **Hetzner `odoo-prod` (ID `132432802`, CX33: 4 shared vCPU, 8 GB RAM, 80 GB disk), `deploy@46.224.228.181`**, stack `/home/deploy/odoo-stack`. The existing production firewall is `11011966`. The Personal AI development VPS is a separate machine; it does not host the ERP database.
+Production: **https://odoo.alogy.pk**. Production server: **Hetzner `odoo-prod` (ID `132432802`, CX33: 4 shared vCPU, 8 GB RAM, 80 GB disk), `deploy@46.224.228.181`**, stack `/home/deploy/odoo-stack`. The server runs Ubuntu 24.04 in Nuremberg (`nbg1`). The existing production firewall is `11011966`. The Personal AI development VPS is a separate machine; it does not host the ERP database.
 
 ## Working from the Personal AI VPS
 
@@ -10,7 +10,7 @@ The migrated project is `/home/ai/projects/odoo-selfhost-1d8943`. Select **odoo-
 
 Codex has two credential-backed integrations:
 
-- **`odoo`**: the existing Odoo MCP connector for ERP searches and reads. `ODOO_YOLO=read` keeps its business-record tools read-only, matching the Mac connector.
+- **`odoo`**: the existing Odoo MCP connector for ERP searches and reads. `ODOO_YOLO=read` keeps its business-record tools read-only, matching the Mac connector. The VPS connector uses a loopback-only SSH tunnel to the production Odoo container, because Cloudflare challenges datacenter requests to the public hostname; traffic between machines stays encrypted and public protections are unchanged.
 - **`odoo_ops`**: production server status, recent logs, Hetzner server details, and commands as the existing `deploy` user. Server commands can change production and should follow the backup and deployment procedures in [Architecture & Operations](docs/ARCHITECTURE.md).
 
 In the VPS desktop terminal:
