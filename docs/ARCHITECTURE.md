@@ -2,6 +2,10 @@
 
 > Self-hosted Odoo 18 Community for SFYA Enterprises. Single VPS (Hetzner), reproducible from git.
 
+## Personal AI VPS development access
+
+The AI development VPS now uses Infisical-backed Odoo and operations tools. See the [README](../README.md) for checkout location, Discord usage, terminal commands, credential ownership, and rotation boundaries. Production remains the separate `odoo-prod` server described below. The Mac checkout remains available.
+
 ---
 
 ## TL;DR — Is my code safe?
