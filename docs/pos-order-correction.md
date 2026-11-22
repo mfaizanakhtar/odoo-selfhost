@@ -1,6 +1,6 @@
 # Posted POS Order Correction
 
-**Status:** Implemented in the repository; not yet deployed or module-upgraded on production.
+**Status:** Merged to `main` in PR #4 and code-deployed via merge commit `f78a131`. Production Odoo modules have **not** been installed/upgraded yet, so the Correct Order action is not active until `sfya_customer_statement` is upgraded and `sfya_pos_order_correction` is installed.
 **Date:** 2026-11-22
 **Modules:** `sfya_customer_statement` (18.0.2.4.0), `sfya_pos_order_correction` (18.0.1.2.0)
 
@@ -149,6 +149,11 @@ for base in ('addons/sfya_customer_statement', 'addons/sfya_pos_order_correction
 print('XML OK')
 PY
 ```
+
+The merge deploy workflow completed the code rsync and container restart, but
+its final Cloudflare health check received HTTP 403 from the GitHub runner. The
+Odoo container itself returned HTTP 200 for `/web/login` when checked from
+inside the server. No application error was found.
 
 Odoo tests are written but have **not** been run in this workspace because it has
 no Docker/Odoo runtime. Run them on a scratch/staging database:
