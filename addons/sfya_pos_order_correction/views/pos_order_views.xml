@@ -19,6 +19,17 @@
                 <field name="sfya_invoice_customer_mismatch" invisible="1"/>
             </xpath>
 
+            <xpath expr="//group[@name='order_fields']" position="after">
+                <group string="Correction" invisible="not sfya_latest_correction_id">
+                    <field name="sfya_latest_correction_id"/>
+                    <field name="sfya_corrected_total"/>
+                    <div colspan="2" class="text-muted">
+                        Invoice and statement show the corrected values. The
+                        original POS order lines are kept for audit.
+                    </div>
+                </group>
+            </xpath>
+
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_sfya_corrections"
                         type="object"

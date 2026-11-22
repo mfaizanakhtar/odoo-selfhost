@@ -149,6 +149,19 @@ class TestStatementAttribution(TestPoSCommon):
         self.assertEqual(len(january), 1)
         self.assertEqual(january[0]['debit'], 1000)
 
+    def test_statement_has_no_correction_banner(self):
+        order = self._order(self.customer, 48000)
+        invoice = self._invoice(self.customer, 48000)
+        self._link(order, invoice)
+
+        for row in self._rows(self.customer):
+            note = row.get('note') or ''
+            doc_name = row.get('doc_name') or ''
+            self.assertNotIn('Correction', note)
+            self.assertNotIn('Corrected', note)
+            self.assertNotIn('Correction', doc_name)
+            self.assertNotIn('Corrected', doc_name)
+
     def test_refund_uses_absolute_amount(self):
         order = self._order(self.customer, -1450)
         invoice = self._invoice(

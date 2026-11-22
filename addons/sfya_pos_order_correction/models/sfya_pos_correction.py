@@ -15,7 +15,11 @@ class SfyaPosCorrection(models.Model):
         'account.move', required=True, ondelete='restrict', index=True,
     )
     correction_type = fields.Selection(
-        [('customer', 'Customer')],
+        [
+            ('customer', 'Customer'),
+            ('price', 'Price / Discount'),
+            ('both', 'Customer and Price / Discount'),
+        ],
         required=True,
         default='customer',
     )
@@ -45,6 +49,9 @@ class SfyaPosCorrection(models.Model):
     company_id = fields.Many2one(
         'res.company', related='order_id.company_id', store=True, index=True,
     )
+    line_ids = fields.One2many(
+        'sfya.pos.correction.line', 'correction_id', string='Price Changes',
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -64,3 +71,32 @@ class SfyaPosCorrection(models.Model):
 
     def copy(self, default=None):
         raise UserError(_('Correction records cannot be copied.'))
+
+
+class SfyaPosCorrectionLine(models.Model):
+    _name = 'sfya.pos.correction.line'
+    _description = 'POS Order Correction Price Line'
+    _order = 'id'
+
+    correction_id = fields.Many2one(
+        'sfya.pos.correction',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+    product_id = fields.Many2one(
+        'product.product', required=True, ondelete='restrict',
+    )
+    old_price_unit = fields.Float(digits='Product Price')
+    new_price_unit = fields.Float(digits='Product Price')
+    old_discount = fields.Float(digits='Discount')
+    new_discount = fields.Float(digits='Discount')
+
+    def write(self, vals):
+        raise UserError(_('Correction lines are append-only.'))
+
+    def unlink(self):
+        raise UserError(_('Correction lines are append-only.'))
+
+    def copy(self, default=None):
+        raise UserError(_('Correction lines cannot be copied.'))

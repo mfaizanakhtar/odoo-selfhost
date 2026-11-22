@@ -10,10 +10,16 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-22-pos-order-correction-design.md`
 
+> **Status:** The statement fix and customer correction are implemented. The
+> price/discount extension was added afterward: it edits invoice lines, keeps
+> the original POS order lines, shows a correction banner on the POS order only,
+> and leaves the customer statement free of any correction banner.
+
 ## Global Constraints
 
 - Odoo 18 Community only.
-- No price, discount, quantity, product, tax, refund, return, replacement, or credit-note changes in this phase.
+- No quantity, product, tax, refund, return, replacement, or credit-note changes.
+- Price/discount changes are limited to open Customer Account invoices and are written to the invoice, not the posted POS order lines.
 - Do not write posted invoice `partner_id` directly; use `button_draft()` first.
 - No context-based security bypass.
 - Correction records are append-only: no write, no unlink, no copy.
@@ -463,7 +469,7 @@ git commit -m "test(pos): cover customer correction eligibility and audit"
 
 - [ ] **Step 2: Update docs**
 
-Add a note describing the correction scope and the deferred price/quantity phase.
+Add a note describing the customer and price/discount correction scope and the deferred quantity/product phase.
 
 - [ ] **Step 3: Static checks**
 
@@ -498,16 +504,24 @@ git commit -m "docs(pos): document customer correction scope and rollout"
 
 ---
 
-## Deferred Phase C — price/discount and quantity
+## Phase 2 — price/discount (implemented)
 
-Do not implement until the following are settled:
+- The wizard lists invoice product lines directly; no POS-to-invoice line mapping
+  is used.
+- The manager edits `new_price_unit` and `new_discount`.
+- The invoice is reset/reposted; invoice and statement show the new values.
+- The POS order lines stay historical; the order form shows a correction group
+  with the corrected invoice total.
+- The statement does not read the correction banner fields.
+- Price changes require the same open-credit eligibility as customer changes.
+- Audit records store old/new price and discount per changed line.
 
-- Whether the POS order lines remain historical or receive a corrected-value
-  overlay.
-- How to map invoice product lines safely when combo sections and note lines are
-  present.
-- How paid cash/bank cases are refunded or charged.
-- Statement consolidation for compensating documents.
+## Still deferred — quantity, product, and paid cash/bank cases
+
+- Quantity and product changes need stock returns or extra deliveries.
+- Paid cash/bank price changes need a refund or extra charge.
+- Partial-line/quantity correction and statement consolidation for compensating
+  documents remain future work.
 
 ## Rollout
 

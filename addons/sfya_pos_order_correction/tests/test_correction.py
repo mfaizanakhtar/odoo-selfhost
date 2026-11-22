@@ -64,12 +64,22 @@ class TestPosOrderCorrection(TestPoSCommon):
         order.write({'account_move': invoice.id, 'state': 'invoiced'})
         return order
 
-    def _wizard(self, order, partner, reason='Test correction'):
-        return self.env['sfya.pos.correction.wizard'].create({
+    def _wizard(self, order, partner, reason='Test correction', price=None):
+        vals = {
             'order_id': order.id,
             'new_partner_id': partner.id,
             'reason': reason,
-        })
+        }
+        if price is not None:
+            invoice_line = order.account_move.invoice_line_ids.filtered(
+                lambda line: line.display_type == 'product'
+            )[:1]
+            vals['line_ids'] = [Command.create({
+                'invoice_line_id': invoice_line.id,
+                'new_price_unit': price,
+                'new_discount': 0.0,
+            })]
+        return self.env['sfya.pos.correction.wizard'].create(vals)
 
     def _mark_invoice(self, invoice, payment_state, residual):
         self.env.cr.execute(
@@ -139,6 +149,68 @@ class TestPosOrderCorrection(TestPoSCommon):
 
         with self.assertRaises(UserError):
             self._wizard(order, self.other_customer).action_apply()
+
+    def test_price_correction_updates_invoice_without_new_documents(self):
+        order = self._order(self.customer, 1000)
+        invoice = self._invoice(self.customer, 1000)
+        self._link(order, invoice)
+        order_line_price = order.lines[0].price_unit
+        moves_before = self.env['account.move'].search_count([])
+
+        self._wizard(order, self.customer, price=1100).action_apply()
+
+        self.assertEqual(invoice.state, 'posted')
+        self.assertEqual(invoice.amount_total, 1100)
+        invoice_line = invoice.invoice_line_ids.filtered(
+            lambda line: line.display_type == 'product'
+        )
+        self.assertEqual(invoice_line.price_unit, 1100)
+        self.assertEqual(order.lines[0].price_unit, order_line_price)
+        self.assertEqual(order.sfya_corrected_total, 1100)
+        correction = order.sfya_latest_correction_id
+        self.assertEqual(correction.correction_type, 'price')
+        self.assertEqual(correction.line_ids.old_price_unit, 1000)
+        self.assertEqual(correction.line_ids.new_price_unit, 1100)
+        self.assertEqual(self.env['account.move'].search_count([]), moves_before)
+
+    def test_customer_and_price_correction(self):
+        order = self._order(self.customer, 1000)
+        invoice = self._invoice(self.customer, 1000)
+        self._link(order, invoice)
+
+        self._wizard(
+            order, self.other_customer, price=1100,
+        ).action_apply()
+
+        self.assertEqual(order.partner_id, self.other_customer)
+        self.assertEqual(invoice.partner_id, self.other_customer)
+        self.assertEqual(invoice.amount_total, 1100)
+        correction = order.sfya_latest_correction_id
+        self.assertEqual(correction.correction_type, 'both')
+        self.assertEqual(correction.line_ids.new_price_unit, 1100)
+
+    def test_rejects_cash_payment_price_change(self):
+        order = self._order(self.customer, 1000)
+        invoice = self._invoice(self.customer, 1000)
+        self._link(order, invoice)
+        self.env['pos.payment'].create({
+            'pos_order_id': order.id,
+            'amount': 10.0,
+            'payment_method_id': self.cash_pm1.id,
+            'payment_date': fields.Datetime.now(),
+        })
+
+        with self.assertRaises(UserError):
+            self._wizard(order, self.customer, price=1100).action_apply()
+
+    def test_rejects_paid_invoice_price_change(self):
+        order = self._order(self.customer, 1000)
+        invoice = self._invoice(self.customer, 1000)
+        self._link(order, invoice)
+        self._mark_invoice(invoice, 'paid', 0.0)
+
+        with self.assertRaises(UserError):
+            self._wizard(order, self.customer, price=1100).action_apply()
 
     def test_rejects_reversed_invoice(self):
         order = self._order(self.customer, 1000)

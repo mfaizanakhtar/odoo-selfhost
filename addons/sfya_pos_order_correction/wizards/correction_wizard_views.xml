@@ -19,15 +19,28 @@
                         </group>
                     </group>
                     <div class="alert alert-info" role="alert">
-                        This phase corrects the customer only. Price, quantity, and
-                        product changes are not included.
+                        Price changes are made on the invoice and statement. The
+                        original POS order lines stay unchanged for audit; the
+                        POS order shows the corrected invoice total in a
+                        correction banner.
                     </div>
                     <div class="alert alert-warning" role="alert">
-                        Changing the invoice customer is allowed only when the
+                        Customer and price changes are allowed only when the
                         invoice is fully unpaid and has no cash or bank payment.
                         Aligning the order to the existing invoice customer is
                         always allowed.
                     </div>
+                    <field name="line_ids">
+                        <list editable="bottom" create="false" delete="false">
+                            <field name="product_id"/>
+                            <field name="old_qty"/>
+                            <field name="old_price_unit"/>
+                            <field name="new_price_unit"/>
+                            <field name="old_discount"/>
+                            <field name="new_discount"/>
+                            <field name="invoice_line_id" column_invisible="True"/>
+                        </list>
+                    </field>
                     <field name="reason" placeholder="Why is this correction needed?"/>
                 </sheet>
                 <footer>
