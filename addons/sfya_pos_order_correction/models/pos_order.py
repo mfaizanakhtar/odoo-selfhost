@@ -15,7 +15,7 @@ class PosOrder(models.Model):
         compute='_compute_sfya_latest_correction',
     )
     sfya_corrected_total = fields.Monetary(
-        related='sfya_latest_correction_id.new_total',
+        compute='_compute_sfya_corrected_total',
         currency_field='currency_id',
     )
 
@@ -45,6 +45,14 @@ class PosOrder(models.Model):
                 [('order_id', '=', order.id)],
                 order='id desc',
                 limit=1,
+            )
+
+    def _compute_sfya_corrected_total(self):
+        # The correction records are append-only, so no stored dependency is
+        # needed; the field is invalidated after each correction.
+        for order in self:
+            order.sfya_corrected_total = (
+                order.sfya_latest_correction_id.new_total
             )
 
     def action_view_sfya_corrections(self):

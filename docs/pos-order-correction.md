@@ -1,8 +1,8 @@
 # Posted POS Order Correction
 
-**Status:** Merged to `main` in PR #4 and code-deployed via merge commit `f78a131`. Production Odoo modules have **not** been installed/upgraded yet, so the Correct Order action is not active until `sfya_customer_statement` is upgraded and `sfya_pos_order_correction` is installed.
+**Status:** Merged to `main` in PR #4 and active on production. `sfya_customer_statement` is upgraded; `sfya_pos_order_correction` is installed. `SFYA/0810` was aligned to **ZM Zone (Lahore)** with audit record `CORR/2026/0001`.
 **Date:** 2026-11-22
-**Modules:** `sfya_customer_statement` (18.0.2.4.0), `sfya_pos_order_correction` (18.0.1.2.0)
+**Modules:** `sfya_customer_statement` (18.0.2.4.0), `sfya_pos_order_correction` (18.0.1.2.1)
 
 ## Why this exists
 
@@ -133,6 +133,21 @@ These are intentionally outside the current implementation:
 For `SFYA/0810`, the invoice is already under **ZM Zone (Lahore)** and unpaid.
 The correction aligns the POS order from **ZM** to **Lahore**. No invoice reset,
 stock movement, refund, or replacement is created.
+
+## Production activation
+
+The production database was backed up before the module work to
+`~/odoo-pre-module-20261122T142612.dump` on the Odoo server.
+
+- `sfya_customer_statement` upgraded to `18.0.2.4.0`.
+- `sfya_pos_order_correction` installed and visible to the `POS Order Correction`
+  group; the administrator is a member.
+- The Lahore statement showed one Rs 48,000 POS sale for `SFYA/0810`; the ZM
+  statement did not show that order.
+- `SFYA/0810` was then aligned from ZM to ZM Zone (Lahore) with audit record
+  `CORR/2026/0001`.
+- The invoice remained `INV/2026/00800`, posted and unpaid, with residual
+  Rs 48,000. No stock or payment was changed.
 
 ## Verification status
 
