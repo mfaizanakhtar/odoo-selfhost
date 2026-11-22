@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_sfya_pos_order_correction" model="res.groups">
+        <field name="name">POS Order Correction</field>
+        <field name="implied_ids" eval="[(4, ref('point_of_sale.group_pos_manager')), (4, ref('account.group_account_invoice')), (4, ref('stock.group_stock_user'))]"/>
+    </record>
+
+    <record id="base.user_admin" model="res.users">
+        <field name="groups_id" eval="[(4, ref('group_sfya_pos_order_correction'))]"/>
+    </record>
+
+    <record id="rule_sfya_pos_correction_company" model="ir.rule">
+        <field name="name">POS order correction: multi-company</field>
+        <field name="model_id" ref="model_sfya_pos_correction"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_sfya_pos_order_correction'))]"/>
+    </record>
+</odoo>

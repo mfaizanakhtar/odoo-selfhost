@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_sfya_pos_correction" model="ir.sequence">
+        <field name="name">POS Order Correction</field>
+        <field name="code">sfya.pos.correction</field>
+        <field name="prefix">CORR/%(year)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

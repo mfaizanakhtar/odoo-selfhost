@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sfya_pos_correction_wizard_form" model="ir.ui.view">
+        <field name="name">sfya.pos.correction.wizard.form</field>
+        <field name="model">sfya.pos.correction.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Correct POS Order">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="order_id"/>
+                            <field name="invoice_id"/>
+                            <field name="old_partner_id"/>
+                            <field name="old_invoice_partner_id"/>
+                            <field name="new_partner_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="payment_summary"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        Price and quantity changes are made on the invoice and
+                        statement. The original POS order lines stay unchanged
+                        for audit; the POS order shows the corrected invoice
+                        total in a correction banner. Quantity changes return
+                        excess stock or create an extra delivery.
+                    </div>
+                    <div class="alert alert-warning" role="alert">
+                        Customer and price changes are allowed only when the
+                        invoice is fully unpaid and has no cash or bank payment.
+                        Aligning the order to the existing invoice customer is
+                        always allowed.
+                    </div>
+                    <field name="line_ids">
+                        <list editable="bottom" create="false" delete="false">
+                            <field name="product_id"/>
+                            <field name="old_qty"/>
+                            <field name="new_qty"/>
+                            <field name="old_price_unit"/>
+                            <field name="new_price_unit"/>
+                            <field name="old_discount"/>
+                            <field name="new_discount"/>
+                            <field name="invoice_line_id" column_invisible="True"/>
+                        </list>
+                    </field>
+                    <field name="reason" placeholder="Why is this correction needed?"/>
+                </sheet>
+                <footer>
+                    <button name="action_apply" type="object"
+                            string="Apply Correction" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sfya_pos_order_correction_wizard" model="ir.actions.act_window">
+        <field name="name">Correct POS Order</field>
+        <field name="res_model">sfya.pos.correction.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

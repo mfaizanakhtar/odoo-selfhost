@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sfya_pos_correction_user,sfya.pos.correction.user,model_sfya_pos_correction,group_sfya_pos_order_correction,1,0,1,0
+access_sfya_pos_correction_line_user,sfya.pos.correction.line.user,model_sfya_pos_correction_line,group_sfya_pos_order_correction,1,0,1,0
+access_sfya_pos_correction_wizard_user,sfya.pos.correction.wizard.user,model_sfya_pos_correction_wizard,group_sfya_pos_order_correction,1,1,1,1
+access_sfya_pos_correction_wizard_line_user,sfya.pos.correction.wizard.line.user,model_sfya_pos_correction_wizard_line,group_sfya_pos_order_correction,1,1,1,1

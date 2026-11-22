@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_pos_form_sfya_correction" model="ir.ui.view">
+        <field name="name">pos.order.form.sfya.correction</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="%(action_sfya_pos_order_correction_wizard)d"
+                        type="action"
+                        string="Correct Order"
+                        class="oe_highlight"
+                        groups="sfya_pos_order_correction.group_sfya_pos_order_correction"
+                        invisible="state != 'invoiced'"
+                        context="{'default_order_id': id}"/>
+            </xpath>
+
+            <xpath expr="//field[@name='failed_pickings']" position="after">
+                <field name="sfya_invoice_customer_mismatch" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//group[@name='order_fields']" position="after">
+                <group string="Correction" invisible="not sfya_latest_correction_id">
+                    <field name="sfya_latest_correction_id"/>
+                    <field name="sfya_corrected_total"/>
+                    <div colspan="2" class="text-muted">
+                        Invoice and statement show the corrected values. The
+                        original POS order lines are kept for audit.
+                    </div>
+                </group>
+            </xpath>
+
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_sfya_corrections"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-history"
+                        groups="sfya_pos_order_correction.group_sfya_pos_order_correction">
+                    <field name="sfya_correction_count" widget="statinfo" string="Corrections"/>
+                </button>
+            </xpath>
+
+            <xpath expr="//div[@name='button_box']" position="after">
+                <div class="alert alert-warning" role="alert"
+                     invisible="not sfya_invoice_customer_mismatch">
+                    The linked invoice customer differs from this order.
+                    Use <b>Correct Order</b> to align them.
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

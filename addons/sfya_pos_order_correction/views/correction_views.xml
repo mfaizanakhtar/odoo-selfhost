@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sfya_pos_correction_list" model="ir.ui.view">
+        <field name="name">sfya.pos.correction.list</field>
+        <field name="model">sfya.pos.correction</field>
+        <field name="arch" type="xml">
+            <list string="POS Order Corrections" create="false" edit="false" delete="false">
+                <field name="name"/>
+                <field name="create_date"/>
+                <field name="order_id"/>
+                <field name="invoice_id"/>
+                <field name="correction_type"/>
+                <field name="old_partner_id"/>
+                <field name="new_partner_id"/>
+                <field name="old_total"/>
+                <field name="new_total"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sfya_pos_correction_form" model="ir.ui.view">
+        <field name="name">sfya.pos.correction.form</field>
+        <field name="model">sfya.pos.correction</field>
+        <field name="arch" type="xml">
+            <form string="POS Order Correction" create="false" edit="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Correction">
+                            <field name="order_id"/>
+                            <field name="invoice_id"/>
+                            <field name="correction_type"/>
+                        </group>
+                        <group string="Customer">
+                            <field name="old_partner_id"/>
+                            <field name="new_partner_id"/>
+                            <field name="old_invoice_partner_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Amounts">
+                            <field name="currency_id" invisible="1"/>
+                            <field name="old_total"/>
+                            <field name="new_total"/>
+                        </group>
+                        <group string="Audit">
+                            <field name="user_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="create_date"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list create="false" edit="false" delete="false">
+                            <field name="product_id"/>
+                            <field name="old_qty"/>
+                            <field name="new_qty"/>
+                            <field name="old_price_unit"/>
+                            <field name="new_price_unit"/>
+                            <field name="old_discount"/>
+                            <field name="new_discount"/>
+                        </list>
+                    </field>
+                    <field name="stock_picking_ids">
+                        <list create="false" edit="false" delete="false">
+                            <field name="name"/>
+                            <field name="origin"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="reason"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
