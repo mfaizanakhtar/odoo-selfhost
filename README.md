@@ -38,4 +38,8 @@ The MCP package currently installed on the AI VPS is `mcp-server-odoo==0.8.0`. T
 
 Changes to `main` deploy through [the Deploy workflow](.github/workflows/deploy.yml), including a pre-deploy database backup. README/docs-only and MCP-launcher-only pushes skip production deployment. Develop on feature branches, inspect the diff, and follow the operations runbook for module upgrades and restores.
 
+## POS order correction
+
+See [Posted POS Order Correction](docs/pos-order-correction.md) for the implemented customer, price/discount, and per-line quantity correction behavior, the statement rules, the audit trail, and the items intentionally not included yet.
+
 See [Architecture & Operations](docs/ARCHITECTURE.md) for topology, production paths, backups, and recovery. [PLAN.md](PLAN.md) is the original planning document; use the operations document for the current deployment.
