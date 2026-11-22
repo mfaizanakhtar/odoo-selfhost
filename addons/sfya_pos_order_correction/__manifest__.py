@@ -1,11 +1,11 @@
 {
     'name': 'SFYA POS Order Correction',
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.2.0',
     'summary': 'Manager correction for invoiced POS order customers',
     'category': 'Point of Sale',
     'author': 'SFYA Enterprises',
     'license': 'LGPL-3',
-    'depends': ['point_of_sale', 'account'],
+    'depends': ['point_of_sale', 'account', 'stock'],
     'data': [
         'security/correction_security.xml',
         'security/ir.model.access.csv',

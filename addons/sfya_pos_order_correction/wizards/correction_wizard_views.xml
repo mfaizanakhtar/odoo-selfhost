@@ -19,10 +19,11 @@
                         </group>
                     </group>
                     <div class="alert alert-info" role="alert">
-                        Price changes are made on the invoice and statement. The
-                        original POS order lines stay unchanged for audit; the
-                        POS order shows the corrected invoice total in a
-                        correction banner.
+                        Price and quantity changes are made on the invoice and
+                        statement. The original POS order lines stay unchanged
+                        for audit; the POS order shows the corrected invoice
+                        total in a correction banner. Quantity changes return
+                        excess stock or create an extra delivery.
                     </div>
                     <div class="alert alert-warning" role="alert">
                         Customer and price changes are allowed only when the
@@ -34,6 +35,7 @@
                         <list editable="bottom" create="false" delete="false">
                             <field name="product_id"/>
                             <field name="old_qty"/>
+                            <field name="new_qty"/>
                             <field name="old_price_unit"/>
                             <field name="new_price_unit"/>
                             <field name="old_discount"/>

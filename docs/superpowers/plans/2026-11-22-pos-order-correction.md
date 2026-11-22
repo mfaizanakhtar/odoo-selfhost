@@ -10,16 +10,18 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-22-pos-order-correction-design.md`
 
-> **Status:** The statement fix and customer correction are implemented. The
-> price/discount extension was added afterward: it edits invoice lines, keeps
-> the original POS order lines, shows a correction banner on the POS order only,
-> and leaves the customer statement free of any correction banner.
+> **Status:** The statement fix, customer correction, price/discount, and
+> per-line quantity correction are implemented. Price and quantity changes edit
+> invoice lines, keep the original POS order lines, show a correction banner on
+> the POS order only, and leave the customer statement free of any correction
+> banner. Quantity changes return excess stock or create an extra delivery for
+> the difference.
 
 ## Global Constraints
 
 - Odoo 18 Community only.
-- No quantity, product, tax, refund, return, replacement, or credit-note changes.
-- Price/discount changes are limited to open Customer Account invoices and are written to the invoice, not the posted POS order lines.
+- No product, tax, refund, return, replacement, or credit-note changes.
+- Price/discount and quantity changes are limited to open Customer Account invoices and are written to the invoice, not the posted POS order lines.
 - Do not write posted invoice `partner_id` directly; use `button_draft()` first.
 - No context-based security bypass.
 - Correction records are append-only: no write, no unlink, no copy.
@@ -469,7 +471,7 @@ git commit -m "test(pos): cover customer correction eligibility and audit"
 
 - [ ] **Step 2: Update docs**
 
-Add a note describing the customer and price/discount correction scope and the deferred quantity/product phase.
+Add a note describing the customer, price/discount, and per-line quantity correction scope and the deferred product/payment phase.
 
 - [ ] **Step 3: Static checks**
 
@@ -516,12 +518,23 @@ git commit -m "docs(pos): document customer correction scope and rollout"
 - Price changes require the same open-credit eligibility as customer changes.
 - Audit records store old/new price and discount per changed line.
 
-## Still deferred — quantity, product, and paid cash/bank cases
+## Phase 3 — per-line quantity (implemented)
 
-- Quantity and product changes need stock returns or extra deliveries.
-- Paid cash/bank price changes need a refund or extra charge.
-- Partial-line/quantity correction and statement consolidation for compensating
-  documents remain future work.
+- The manager edits `new_qty` on an invoice product line.
+- Lower quantity returns the difference from the customer location to stock.
+- Higher quantity checks available stock and creates an extra delivery.
+- Quantity changes require exactly one completed stock move per product and
+  reject lot/serial tracking, missing deliveries, duplicate lines, and
+  insufficient stock.
+- The invoice and statement show the new quantity; the POS order keeps its
+  original line and correction banner.
+- Stock adjustment pickings are linked to the correction record.
+
+## Still deferred — product and paid cash/bank cases
+
+- Product changes need a stock swap.
+- Paid cash/bank price or quantity changes need a refund or extra charge.
+- Statement consolidation for compensating documents remains future work.
 
 ## Rollout
 

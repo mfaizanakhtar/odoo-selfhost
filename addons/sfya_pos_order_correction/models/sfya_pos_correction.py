@@ -18,7 +18,11 @@ class SfyaPosCorrection(models.Model):
         [
             ('customer', 'Customer'),
             ('price', 'Price / Discount'),
+            ('quantity', 'Quantity'),
             ('both', 'Customer and Price / Discount'),
+            ('customer_quantity', 'Customer and Quantity'),
+            ('price_quantity', 'Price / Discount and Quantity'),
+            ('all', 'Customer, Price / Discount and Quantity'),
         ],
         required=True,
         default='customer',
@@ -50,7 +54,10 @@ class SfyaPosCorrection(models.Model):
         'res.company', related='order_id.company_id', store=True, index=True,
     )
     line_ids = fields.One2many(
-        'sfya.pos.correction.line', 'correction_id', string='Price Changes',
+        'sfya.pos.correction.line', 'correction_id', string='Line Changes',
+    )
+    stock_picking_ids = fields.Many2many(
+        'stock.picking', string='Stock Adjustments', readonly=True,
     )
 
     @api.model_create_multi
@@ -87,6 +94,8 @@ class SfyaPosCorrectionLine(models.Model):
     product_id = fields.Many2one(
         'product.product', required=True, ondelete='restrict',
     )
+    old_qty = fields.Float(digits='Product Unit of Measure')
+    new_qty = fields.Float(digits='Product Unit of Measure')
     old_price_unit = fields.Float(digits='Product Price')
     new_price_unit = fields.Float(digits='Product Price')
     old_discount = fields.Float(digits='Discount')

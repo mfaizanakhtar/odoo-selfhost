@@ -6,7 +6,8 @@
 
 ## Problem
 
-A completed POS order can have the wrong customer, unit price, or discount.
+A completed POS order can have the wrong customer, unit price, discount, or
+quantity.
 Odoo locks the posted order, so staff change the linked invoice instead. The POS
 order keeps its old values, and the customer statement (which reads the POS
 order) disagrees with the receivable ledger.
@@ -77,11 +78,30 @@ Paid cash/bank cases remain out of scope.
 The customer statement never shows the POS order's correction banner; it reads
 the corrected invoice line values directly.
 
+### Quantity correction
+
+Quantity is corrected per invoice product line. The manager enters the new
+quantity; the invoice line, invoice total, and customer statement are updated.
+
+Stock is adjusted only for the difference:
+
+- lower quantity → return the excess from the customer location to stock;
+- higher quantity → check available stock and create an extra delivery.
+
+For storable products the order must have exactly one completed stock move for
+that product. Lot/serial tracked products, products without a completed delivery,
+duplicate product lines, and multiple stock moves are rejected in this phase.
+Non-storable products are corrected on the invoice without a stock move.
+
+The original POS order line keeps its historical quantity; the POS order shows
+the corrected invoice total in its correction banner. The statement reads the
+corrected invoice quantity and never shows the stock adjustment document.
+
 ## Non-goals
 
-- Quantity, product, or tax changes.
-- Paid/partial invoice customer or price changes.
-- Cash/bank-settled invoice customer or price changes.
+- Product or tax changes.
+- Paid/partial invoice customer, price, or quantity changes.
+- Cash/bank-settled invoice customer, price, or quantity changes.
 - Uninvoiced POS orders.
 - Credit notes, refunds, returns, or replacement orders.
 - Customer portal visibility changes.
@@ -96,11 +116,12 @@ the corrected invoice line values directly.
 - `old_invoice_partner_id`
 - `old_total`, `new_total`, `currency_id`
 - `reason`, `user_id`, `company_id`
-- `line_ids`
+- `line_ids`, `stock_picking_ids`
 
 `sfya.pos.correction.line`
 
 - `correction_id`, `product_id`
+- `old_qty`, `new_qty`
 - `old_price_unit`, `new_price_unit`
 - `old_discount`, `new_discount`
 
@@ -129,6 +150,13 @@ reposted immediately in the same transaction.
 - An open-credit invoice can be repriced from Rs 120 to Rs 125; the invoice and
   statement show Rs 125, no credit note/replacement appears, and the POS order
   keeps its original lines plus a correction banner.
+- An open-credit quantity can be reduced from 400 to 350; the invoice and
+  statement show 350, 50 units return to stock, and no return/replacement row
+  appears on the statement.
+- An open-credit quantity can be increased from 400 to 450 only if stock is
+  available; an extra delivery is created.
+- Insufficient stock, lot/serial tracking, missing completed deliveries, and
+  duplicate/multiple stock moves are rejected with a clear message.
 - Paid, partial, cash/bank, locked, reversed, refunded, multi-order, and
   mismatched cases are rejected with a clear message.
 - Every correction is audited; the audit record and price lines cannot be
