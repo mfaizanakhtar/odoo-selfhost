@@ -16,38 +16,81 @@ class ResPartner(models.Model):
         rows = []
         opening = self._compute_opening_balance(date_from)
 
-        # POS orders
+        # POS orders. A posted linked invoice owns the row and its date, so the
+        # statement follows the receivable ledger; otherwise the POS order owns
+        # it. Group by invoice so a multi-order invoice prints once.
         pos_domain = [
+            '|',
             ('partner_id', '=', self.id),
-            ('date_order', '>=', date_from),
-            ('date_order', '<=', date_to),
+            ('account_move.partner_id', '=', self.id),
         ]
         if not include_drafts:
             pos_domain.append(('state', 'in', ['paid', 'done', 'invoiced']))
-        for order in self.env['pos.order'].search(pos_domain):
+
+        groups = {}
+        for order in self.env['pos.order'].search(pos_domain, order='date_order, id'):
+            inv = order.account_move
+            if inv:
+                if inv.state != 'posted' or inv.partner_id != self:
+                    continue
+                if not inv.invoice_date or not (date_from <= inv.invoice_date <= date_to):
+                    continue
+                key = ('invoice', inv.id)
+            else:
+                order_date = order.date_order.date() if order.date_order else False
+                if not order_date or not (date_from <= order_date <= date_to):
+                    continue
+                if order.partner_id != self:
+                    continue
+                key = ('order', order.id)
+            groups.setdefault(key, []).append(order)
+
+        for key, orders in groups.items():
+            primary = orders[0]
+            inv = primary.account_move if key[0] == 'invoice' else self.env['account.move']
             cash_received = sum(
-                p.amount for p in order.payment_ids
+                p.amount
+                for order in orders
+                for p in order.payment_ids
                 if p.payment_method_id.type != 'pay_later'
             )
-            inv = order.account_move
-            is_refund = order.amount_total < 0
 
-            if inv and inv.state == 'posted':
-                amount = inv.amount_total
+            if inv:
+                amount = abs(inv.amount_total)
+                is_refund = inv.move_type == 'out_refund'
                 lines = [{
                     'name': (l.product_id.display_name or l.name or ''),
                     'qty': l.quantity,
                     'price_unit': l.price_unit,
                     'subtotal': l.price_total,
                 } for l in inv.invoice_line_ids if l.display_type not in ('line_section', 'line_note')]
+                date = inv.invoice_date
+                create_date = min(order.create_date for order in orders)
+                if len(orders) == 1:
+                    doc_name = primary.pos_reference or primary.name
+                    doc_id = primary.id
+                    doc_model = 'pos.order'
+                    note = _('Invoice %s', inv.name)
+                else:
+                    doc_name = inv.name
+                    doc_id = inv.id
+                    doc_model = 'account.move'
+                    note = _('%s POS orders', len(orders))
             else:
-                amount = abs(order.amount_total)
+                amount = abs(primary.amount_total)
+                is_refund = primary.amount_total < 0
                 lines = [{
                     'name': l.product_id.display_name or l.full_product_name,
                     'qty': l.qty,
                     'price_unit': l.price_unit,
                     'subtotal': abs(l.price_subtotal_incl),
-                } for l in order.lines]
+                } for l in primary.lines]
+                date = primary.date_order.date() if hasattr(primary.date_order, 'date') else primary.date_order
+                create_date = primary.create_date
+                doc_name = primary.pos_reference or primary.name
+                doc_id = primary.id
+                doc_model = 'pos.order'
+                note = ''
 
             if is_refund:
                 debit = abs(cash_received)
@@ -57,15 +100,15 @@ class ResPartner(models.Model):
                 credit = cash_received
 
             rows.append({
-                'date': order.date_order.date() if hasattr(order.date_order, 'date') else order.date_order,
-                'create_date': order.create_date,
+                'date': date,
+                'create_date': create_date,
                 'kind': 'pos_refund' if is_refund else 'pos',
                 'kind_label': _('POS Refund') if is_refund else _('POS Sale'),
-                'doc_name': order.pos_reference or order.name,
-                'doc_id': order.id,
-                'doc_model': 'pos.order',
+                'doc_name': doc_name,
+                'doc_id': doc_id,
+                'doc_model': doc_model,
                 'lines': lines,
-                'note': '',
+                'note': note,
                 'debit': debit,
                 'credit': credit,
                 'balance': 0.0,
