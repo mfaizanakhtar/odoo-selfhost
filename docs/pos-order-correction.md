@@ -2,7 +2,7 @@
 
 **Status:** Merged to `main` in PR #4 and active on production. `sfya_customer_statement` is upgraded; `sfya_pos_order_correction` is installed. `SFYA/0810` was aligned to **ZM Zone (Lahore)** with audit record `CORR/2026/0001`.
 **Date:** 2026-11-22
-**Modules:** `sfya_customer_statement` (18.0.2.4.0), `sfya_pos_order_correction` (18.0.1.2.1)
+**Modules:** `sfya_customer_statement` (18.0.2.4.1), `sfya_pos_order_correction` (18.0.1.2.1)
 
 ## Why this exists
 
@@ -27,6 +27,9 @@ with no return/replacement rows and no correction banner.
 - Omits POS orders whose linked invoice is draft or cancelled.
 - Does not duplicate a linked invoice in the separate invoice section.
 - Handles refunds with the absolute invoice amount and the invoice direction.
+- Omits a refund of an invoiced sale when the refund has no invoice and no
+  payment, because it has no financial effect. This prevents a voided POS
+  refund from appearing as a second refund row.
 
 ### 2. Manager-only Correct Order action
 
