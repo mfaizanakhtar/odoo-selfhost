@@ -20,7 +20,17 @@ class TestStatementAttribution(TestPoSCommon):
             'config_id': cls.basic_config.id,
         })
 
-    def _order(self, partner, amount=48000, state='invoiced', date_order=None):
+    def _order(self, partner, amount=48000, state='invoiced', date_order=None,
+               refunded_order=None):
+        line_values = {
+            'product_id': self.product.id,
+            'qty': 1,
+            'price_unit': amount,
+            'price_subtotal': amount,
+            'price_subtotal_incl': amount,
+        }
+        if refunded_order:
+            line_values['refunded_orderline_id'] = refunded_order.lines[0].id
         return self.env['pos.order'].create({
             'session_id': self.session.id,
             'partner_id': partner.id,
@@ -30,13 +40,7 @@ class TestStatementAttribution(TestPoSCommon):
             'amount_total': amount,
             'amount_paid': amount,
             'amount_return': 0,
-            'lines': [Command.create({
-                'product_id': self.product.id,
-                'qty': 1,
-                'price_unit': amount,
-                'price_subtotal': amount,
-                'price_subtotal_incl': amount,
-            })],
+            'lines': [Command.create(line_values)],
         })
 
     def _invoice(self, partner, amount, move_type='out_invoice',
@@ -98,6 +102,22 @@ class TestStatementAttribution(TestPoSCommon):
         rows = self._pos_rows(self.customer)
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['debit'], 1000)
+
+    def test_uninvoiced_refund_of_invoiced_order_is_omitted(self):
+        original = self._order(self.customer, 1450)
+        invoice = self._invoice(self.customer, 1450)
+        self._link(original, invoice)
+
+        # A refund of an invoiced sale with no invoice and no payment has no
+        # financial effect. It is the footprint of a voided POS refund.
+        self._order(
+            self.customer, -1450, state='paid', refunded_order=original,
+        )
+
+        rows = self._pos_rows(self.customer)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['kind'], 'pos')
+        self.assertEqual(rows[0]['debit'], 1450)
 
     def test_multi_order_invoice_emits_one_row(self):
         first = self._order(self.customer, 1000)

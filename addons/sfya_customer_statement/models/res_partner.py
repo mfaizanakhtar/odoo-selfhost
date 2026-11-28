@@ -30,6 +30,16 @@ class ResPartner(models.Model):
         groups = {}
         for order in self.env['pos.order'].search(pos_domain, order='date_order, id'):
             inv = order.account_move
+            if (
+                not inv
+                and order.amount_total < 0
+                and not order.payment_ids
+                and order.refunded_order_id.account_move
+            ):
+                # A refund of an invoiced sale must be invoiced or settled.
+                # Without either it has no financial effect and is usually a
+                # voided POS refund; including it would double the refund.
+                continue
             if inv:
                 if inv.state != 'posted' or inv.partner_id != self:
                     continue
