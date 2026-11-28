@@ -142,7 +142,8 @@ stock movement, refund, or replacement is created.
 The production database was backed up before the module work to
 `~/odoo-pre-module-20261122T142612.dump` on the Odoo server.
 
-- `sfya_customer_statement` upgraded to `18.0.2.4.0`.
+- `sfya_customer_statement` upgraded to `18.0.2.4.1`, including the voided-refund
+  statement fix.
 - `sfya_pos_order_correction` installed and visible to the `POS Order Correction`
   group; the administrator is a member.
 - The Lahore statement showed one Rs 48,000 POS sale for `SFYA/0810`; the ZM
@@ -173,8 +174,12 @@ its final Cloudflare health check received HTTP 403 from the GitHub runner. The
 Odoo container itself returned HTTP 200 for `/web/login` when checked from
 inside the server. No application error was found.
 
-Odoo tests are written but have **not** been run in this workspace because it has
-no Docker/Odoo runtime. Run them on a scratch/staging database:
+The Odoo test suite was run on a fresh scratch database on the production host:
+**11 tests, 0 failures**. The scratch database and its filestore were then
+dropped. The new regression test covers a refund of an invoiced sale with no
+invoice and no payment.
+
+For reference, the test command is:
 
 ```bash
 docker compose run --rm odoo odoo -d sfya_correction_test \
@@ -182,6 +187,18 @@ docker compose run --rm odoo odoo -d sfya_correction_test \
   --test-enable --test-tags /sfya_customer_statement,/sfya_pos_order_correction \
   --stop-after-init --no-http
 ```
+
+### SFYA/0922 voided refund
+
+`SFYA/0922` had two POS refund orders for the same Rs 47,800 sale:
+
+- order 1030: no invoice, no payment, no journal entry; its stock return was
+  reversed;
+- order 1032: invoiced as `RINV/2026/00101`, the valid refund.
+
+The statement counted both, so it closed at Rs 84,900 while the receivable
+ledger was Rs 132,700. After the fix, the statement shows one sale, the corrected
+sale `SFYA/0923`, and one refund, closing at **Rs 132,700**.
 
 ## Related documents
 
@@ -195,3 +212,4 @@ docker compose run --rm odoo odoo -d sfya_correction_test \
 - `598f161` — customer correction and audit
 - `734effd` — invoice price/discount correction with POS-only banner
 - `4e7a69a` — per-line quantity correction with stock adjustment
+- `a213a19` — omit voided uninvoiced refunds from the statement (PR #6)
